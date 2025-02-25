@@ -3,25 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universo Realista - Experiência 3D</title>
+    <title>Universo Realista</title>
     <style>
-        /* Estilos básicos */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: Arial, sans-serif;
-            background: #000;
-            color: white;
+            margin: 0;
             overflow: hidden;
-            position: relative;
+            background-color: #000;
+            font-family: Arial, sans-serif;
         }
-        
-        /* Container Three.js: 100% da tela */
-        #three-container {
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+        canvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -29,376 +24,55 @@
             height: 100%;
             z-index: 1;
         }
-        
-        /* Tela de carregamento */
-        #loading-screen {
-            position: fixed;
+        #css-renderer {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: black;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: white;
-            font-size: 24px;
+            pointer-events: none;
+            z-index: 2;
         }
-        
-        #loading-progress {
-            width: 300px;
-            height: 30px;
-            background: #333;
-            border-radius: 15px;
-            margin-top: 20px;
-            overflow: hidden;
+        #error {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: red;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            display: none;
+            z-index: 1000;
+            border-radius: 5px;
         }
-        
-        #loading-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #ff0000, #ff9500);
-            transition: width 0.5s;
-        }
-        
-        /* Player placeholder que fica visível durante o carregamento */
-        #player-placeholder {
-            width: 800px;
-            height: 450px;
-            background-color: #000;
-            border: 40px solid #ff6600;
-            border-radius: 15px;
-            box-shadow: 0 0 100px #ff6600, 0 0 40px #ff0000;
-            margin: 30px auto;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        #player-title {
-            background-color: #ff0000;
-            color: white;
-            padding: 15px;
-            font-size: 40px;
-            font-weight: bold;
-            text-align: center;
-            animation: blink 0.5s infinite;
-        }
-        
         @keyframes blink {
             0%, 100% { opacity: 1; background-color: #ff0000; }
             50% { opacity: 0.8; background-color: #ff6600; }
         }
-        
-        #player-content {
-            width: 100%;
-            height: calc(100% - 70px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 30px;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        /* Botão de debug */
-        #debug-button {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            padding: 10px 15px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 9000;
-        }
-        
-        /* Painel de debug */
-        #debug-panel {
-            position: fixed;
-            top: 60px;
-            right: 10px;
-            width: 300px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #00ff00;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 14px;
-            color: #00ff00;
-            z-index: 9000;
-            display: none;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        #debug-panel h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #00ff00;
-            padding-bottom: 5px;
-        }
-        
-        #debug-panel p {
-            margin: 5px 0;
-        }
-        
-        /* Controles */
-        #controls-info {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #3366ff;
-            z-index: 100;
-        }
-        
-        #controls-info h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: #3366ff;
-        }
-        
-        #controls-info p {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        
-        /* Estilos para o iframe direto no DOM */
-        #direct-player-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 800px;
-            height: 450px;
-            z-index: 5000;
-            border: 40px solid #ff6600;
-            border-radius: 15px;
-            box-shadow: 0 0 100px #ff6600, 0 0 40px #ff0000;
-            background-color: #000;
-            display: none; /* Inicialmente oculto */
-        }
-        
-        #direct-player-title {
-            background-color: #ff0000;
-            color: white;
-            padding: 15px;
-            font-size: 40px;
-            font-weight: bold;
-            text-align: center;
-            animation: blink 0.5s infinite;
-        }
-        
-        #direct-player-iframe {
-            width: 100%;
-            height: calc(100% - 70px);
-            border: none;
-        }
-        
-        /* Botão para alternar entre player 3D e direto */
-        #toggle-player-mode {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #ff6600;
-            border: 2px solid #ff6600;
-            padding: 10px 15px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 9000;
-        }
     </style>
 </head>
 <body>
-    <!-- Tela de carregamento -->
-    <div id="loading-screen">
-        <h2>Carregando Experiência Espacial</h2>
-        <div id="loading-progress">
-            <div id="loading-bar"></div>
-        </div>
-        <p id="loading-status">Iniciando...</p>
-        
-        <!-- Player placeholder que fica visível durante o carregamento -->
-        <div id="player-placeholder">
-            <div id="player-title">🔴 LIVE STREAM 🔴</div>
-            <div id="player-content">Carregando player da live...</div>
-        </div>
-        
-        <p>Aguarde enquanto preparamos a experiência...</p>
-    </div>
-
-    <!-- Container Three.js -->
-    <div id="three-container"></div>
-    
-    <!-- Player direto no DOM (alternativa ao CSS3D) -->
-    <div id="direct-player-container">
-        <div id="direct-player-title">🔴 LIVE STREAM 🔴</div>
-        <iframe id="direct-player-iframe" src="https://203779.bitmap.stream/embed/video" frameborder="0" allowfullscreen></iframe>
+    <div id="container">
+        <div id="error"></div>
     </div>
     
-    <!-- Botão para alternar entre modos de player -->
-    <button id="toggle-player-mode">Alternar Modo do Player</button>
-    
-    <!-- Botão de debug -->
-    <button id="debug-button" onclick="toggleDebug()">Debug</button>
-    
-    <!-- Painel de debug -->
-    <div id="debug-panel">
-        <h3>Informações de Debug</h3>
-        <div id="debug-content"></div>
-    </div>
-    
-    <!-- Informações de controles -->
-    <div id="controls-info">
-        <h3>🎮 Controles</h3>
-        <p>🖱️ Mouse: Olhar ao redor</p>
-        <p>⌨️ W/A/S/D: Mover a nave</p>
-        <p>⬆️ Espaço: Subir</p>
-        <p>⬇️ Shift: Descer</p>
-    </div>
-
-    <!-- Importmap para o Three.js -->
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
         }
+    }
     </script>
-
-    <!-- Scripts -->
+    
     <script>
-        // Função para simular o carregamento
-        function simulateLoading() {
-            const loadingBar = document.getElementById('loading-bar');
-            const loadingStatus = document.getElementById('loading-status');
-            const loadingScreen = document.getElementById('loading-screen');
-            const playerContent = document.getElementById('player-content');
-            
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 10;
-                if (progress > 100) progress = 100;
-                
-                loadingBar.style.width = progress + '%';
-                
-                if (progress < 30) {
-                    loadingStatus.textContent = "Carregando recursos...";
-                    playerContent.textContent = "Preparando player da live...";
-                } else if (progress < 60) {
-                    loadingStatus.textContent = "Preparando ambiente espacial...";
-                    playerContent.textContent = "Conectando à transmissão...";
-                } else if (progress < 90) {
-                    loadingStatus.textContent = "Posicionando nave...";
-                    playerContent.textContent = "Player pronto para exibição!";
-                } else {
-                    loadingStatus.textContent = "Quase pronto!";
-                    playerContent.textContent = "Clique para iniciar quando carregar!";
-                }
-                
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    
-                    // Adicionar botão para iniciar
-                    const startButton = document.createElement('button');
-                    startButton.textContent = "INICIAR EXPLORAÇÃO";
-                    startButton.style.marginTop = "30px";
-                    startButton.style.padding = "15px 30px";
-                    startButton.style.fontSize = "20px";
-                    startButton.style.background = "linear-gradient(90deg, #ff0000, #ff9500)";
-                    startButton.style.border = "none";
-                    startButton.style.borderRadius = "30px";
-                    startButton.style.color = "white";
-                    startButton.style.cursor = "pointer";
-                    startButton.style.fontWeight = "bold";
-                    startButton.style.boxShadow = "0 0 20px rgba(255, 100, 0, 0.7)";
-                    
-                    startButton.onclick = function() {
-                        loadingScreen.style.display = "none";
-                        
-                        // Carregar o script principal após o usuário clicar
-                        const script = document.createElement('script');
-                        script.type = 'module';
-                        script.src = 'main.js';
-                        document.body.appendChild(script);
-                        
-                        console.log("Iniciando experiência 3D...");
-                    };
-                    
-                    loadingScreen.appendChild(startButton);
-                }
-            }, 200);
-        }
-        
-        // Função para alternar o modo do player
-        function togglePlayerMode() {
-            const directPlayer = document.getElementById('direct-player-container');
-            if (directPlayer.style.display === 'none' || directPlayer.style.display === '') {
-                directPlayer.style.display = 'block';
-                console.log("Modo de player: DOM direto");
-                
-                // Atualizar o botão
-                document.getElementById('toggle-player-mode').textContent = "Voltar ao Player 3D";
-            } else {
-                directPlayer.style.display = 'none';
-                console.log("Modo de player: Three.js CSS3D");
-                
-                // Atualizar o botão
-                document.getElementById('toggle-player-mode').textContent = "Alternar Modo do Player";
-            }
-        }
-        
-        // Função para mostrar/ocultar o painel de debug
-        function toggleDebug() {
-            const debugPanel = document.getElementById('debug-panel');
-            if (debugPanel.style.display === 'none' || debugPanel.style.display === '') {
-                debugPanel.style.display = 'block';
-                updateDebugInfo();
-            } else {
-                debugPanel.style.display = 'none';
-            }
-        }
-        
-        // Função para atualizar informações de debug
-        function updateDebugInfo() {
-            const debugContent = document.getElementById('debug-content');
-            
-            // Verificar se as variáveis globais do Three.js estão disponíveis
-            if (window.scene && window.camera && window.playerScreen) {
-                let info = `
-                    <p><strong>Player:</strong> ${window.playerScreen ? 'Criado' : 'Não criado'}</p>
-                    <p><strong>Player visível:</strong> ${window.playerScreen?.visible ? 'Sim' : 'Não'}</p>
-                    <p><strong>Posição do player:</strong> ${JSON.stringify(window.streamViewPosition)}</p>
-                    <p><strong>Posição da nave:</strong> ${JSON.stringify(window.spaceship?.position)}</p>
-                    <p><strong>Posição da câmera:</strong> ${JSON.stringify(window.camera?.position)}</p>
-                    <p><strong>CSS3D no DOM:</strong> ${document.querySelector('.CSS3DObject') ? 'Sim' : 'Não'}</p>
-                `;
-                
-                debugContent.innerHTML = info;
-            } else {
-                debugContent.innerHTML = "<p>Ambiente Three.js ainda não inicializado</p>";
-            }
-            
-            // Atualizar a cada segundo
-            setTimeout(updateDebugInfo, 1000);
-        }
-        
-        // Adicionar event listener para o botão de alternar modo do player
-        document.getElementById('toggle-player-mode').addEventListener('click', togglePlayerMode);
-        
-        // Iniciar simulação de carregamento
-        window.onload = simulateLoading;
+        window.addEventListener('error', function(e) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Erro: ' + e.message;
+            console.error('Error:', e.message);
+        });
     </script>
+    
+    <script type="module" src="js/main.js"></script>
 </body>
 </html> 
