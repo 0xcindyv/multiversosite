@@ -9,15 +9,53 @@
             margin: 0;
             overflow: hidden;
             background-color: #000;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
         }
         canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            display: block;
+            z-index: 1;
+        }
+        #css-renderer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        #error {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: red;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            display: none;
+            z-index: 1000;
+            border-radius: 5px;
+        }
+        /* Estilos para animação do título */
+        @keyframes blink {
+            0%, 100% { opacity: 1; background-color: #ff0000; }
+            50% { opacity: 0.8; background-color: #ff6600; }
         }
     </style>
 </head>
 <body>
+    <div id="container">
+        <div id="error"></div>
+    </div>
+    
     <script type="importmap">
     {
         "imports": {
@@ -26,6 +64,16 @@
         }
     }
     </script>
+    
+    <script>
+        window.addEventListener('error', function(e) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Erro: ' + e.message;
+            console.error('Error:', e.message);
+        });
+    </script>
+    
     <script type="module" src="js/main.js"></script>
 </body>
 </html> 

@@ -1,18 +1,43 @@
 import * as THREE from 'three';
 import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+
+// Configurações globais
+const STREAM_WIDTH = 800;
+const STREAM_HEIGHT = 450;
+let streamScreen;
+let cssRenderer;
 
 // Scene setup
 const scene = new THREE.Scene();
+const cssScene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+
+// Configurar WebGL renderer primeiro
 const renderer = new THREE.WebGLRenderer({ 
     antialias: true,
-    alpha: true,
+    alpha: false, // Mudado para false para garantir fundo preto
     powerPreference: "high-performance"
 });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000, 1);
+renderer.domElement.style.position = 'absolute';
+renderer.domElement.style.top = '0';
+renderer.domElement.style.left = '0';
+renderer.domElement.style.zIndex = '1';
 document.body.appendChild(renderer.domElement);
+
+// Configurar CSS3D Renderer depois
+cssRenderer = new CSS3DRenderer();
+cssRenderer.setSize(window.innerWidth, window.innerHeight);
+cssRenderer.domElement.style.position = 'absolute';
+cssRenderer.domElement.style.top = '0';
+cssRenderer.domElement.style.left = '0';
+cssRenderer.domElement.style.pointerEvents = 'none';
+cssRenderer.domElement.style.zIndex = '2';
+document.body.appendChild(cssRenderer.domElement);
 
 // Add orange glow to background
 const orangeLight = new THREE.PointLight(0xD2691E, 3, 3000);
@@ -30,10 +55,10 @@ scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.FogExp2(0x000000, 0.0002);
 
 // Lighting setup
-const ambientLight = new THREE.AmbientLight(0x6666ff, 0.2);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xD2691E, 2);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(1, 1, 1);
 scene.add(directionalLight);
 
@@ -52,12 +77,66 @@ camera.lookAt(0, 0, 0);
 
 // First Person Controls
 const controls = new FirstPersonControls(camera, renderer.domElement);
-controls.movementSpeed = 400;
-controls.lookSpeed = 0.1;
-controls.lookVertical = true;
-controls.constrainVertical = true;
-controls.verticalMin = Math.PI / 4;
-controls.verticalMax = Math.PI * 3 / 4;
+controls.enabled = false; // Desabilita os controles padrão
+
+// Adiciona variáveis para controle de movimento
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
+let moveUp = false;
+let moveDown = false;
+let sprint = false;
+
+// Event listeners para controle de movimento
+window.addEventListener('keydown', (event) => {
+    switch (event.code) {
+        case 'KeyW': moveForward = true; break;
+        case 'KeyS': moveBackward = true; break;
+        case 'KeyA': moveLeft = true; break;
+        case 'KeyD': moveRight = true; break;
+        case 'Space': moveUp = true; break;
+        case 'ShiftLeft': sprint = true; break;
+        case 'ControlLeft': moveDown = true; break;
+    }
+});
+
+window.addEventListener('keyup', (event) => {
+    switch (event.code) {
+        case 'KeyW': moveForward = false; break;
+        case 'KeyS': moveBackward = false; break;
+        case 'KeyA': moveLeft = false; break;
+        case 'KeyD': moveRight = false; break;
+        case 'Space': moveUp = false; break;
+        case 'ShiftLeft': sprint = false; break;
+        case 'ControlLeft': moveDown = false; break;
+    }
+});
+
+// Mouse movement control
+let mouseX = 0;
+let mouseY = 0;
+let targetRotationY = 0;
+let verticalSpeed = 0;
+const maxVerticalSpeed = 2000;
+const verticalDamping = 0.95;
+
+window.addEventListener('mousemove', (event) => {
+    if (document.pointerLockElement === renderer.domElement) {
+        mouseX = event.movementX * 0.002;
+        mouseY = event.movementY * 10;
+        
+        targetRotationY -= mouseX;
+        
+        // Ajusta a velocidade vertical baseada no movimento do mouse
+        verticalSpeed = Math.max(-maxVerticalSpeed, Math.min(maxVerticalSpeed, verticalSpeed - mouseY));
+    }
+});
+
+// Pointer lock control
+renderer.domElement.addEventListener('click', () => {
+    renderer.domElement.requestPointerLock();
+});
 
 // Create spaceship texture
 function createSpaceshipTexture() {
@@ -136,11 +215,12 @@ function createSpaceship() {
     const domeMaterial = new THREE.MeshPhongMaterial({
         color: 0xD2691E, // Laranja avermelhado
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.2,
         shininess: 100,
         specular: 0xffffff,
-        envMap: null, // Adiciona reflexo
-        refractionRatio: 0.98 // Adiciona efeito de refração
+        envMap: null,
+        refractionRatio: 0.98,
+        blending: THREE.AdditiveBlending // Adiciona blending para efeito de vidro
     });
     const dome = new THREE.Mesh(domeGeometry, domeMaterial);
     dome.position.y = 8;
@@ -200,7 +280,8 @@ function createSpaceship() {
         group.add(thrusterLight);
     });
 
-    group.scale.set(3, 3, 3);
+    group.scale.set(6, 6, 6);
+    group.rotation.y = Math.PI; // Rotaciona a nave 180 graus para os propulsores ficarem para trás
     scene.add(group);
     return group;
 }
@@ -313,7 +394,7 @@ function generateTexture(data, width, height) {
     canvas.height = height;
 
     const context = canvas.getContext('2d');
-    context.fillStyle = '#000';
+    context.fillStyle = '#8B4513'; // Cor base marrom
     context.fillRect(0, 0, width, height);
 
     const image = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -327,10 +408,10 @@ function generateTexture(data, width, height) {
 
         const shade = vector3.dot(sun);
 
-        // Lunar surface colors (grayer than the original)
-        imageData[i] = (96 + shade * 128) * (0.5 + data[j] * 0.007);
-        imageData[i + 1] = (96 + shade * 128) * (0.5 + data[j] * 0.007);
-        imageData[i + 2] = (96 + shade * 128) * (0.5 + data[j] * 0.007);
+        // Cores do terreno lunar (tons de marrom)
+        imageData[i] = (139 + shade * 128) * (0.5 + data[j] * 0.007);     // R - mais vermelho
+        imageData[i + 1] = (69 + shade * 128) * (0.5 + data[j] * 0.007);  // G - menos verde
+        imageData[i + 2] = (19 + shade * 128) * (0.5 + data[j] * 0.007);  // B - menos azul
         imageData[i + 3] = 255;
     }
 
@@ -365,16 +446,44 @@ let lunarTerrain; // Referência para o terreno lunar
 
 function init() {
     try {
+        // Limpa as cenas
+        while(scene.children.length > 0) { 
+            scene.remove(scene.children[0]); 
+        }
+        while(cssScene.children.length > 0) {
+            cssScene.remove(cssScene.children[0]);
+        }
+
+        // Adiciona luzes básicas primeiro
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // Cria elementos na ordem correta
         createStars();
         lunarTerrain = createLunarTerrain();
         spaceship = createSpaceship();
+        createStreamScreen();
         const earth = createEarth();
         const sun = createSun();
         
-        // Start animation loop
-        animate();
+        // Posiciona a nave acima do terreno lunar
+        spaceship.position.set(0, 800, 0);
+        spaceship.rotation.y = Math.PI; // Garante que a nave comece virada para trás
         
-        console.log("Scene initialized successfully");
+        // Posiciona a câmera atrás da nave
+        camera.position.set(0, 1000, 1200);
+        camera.lookAt(spaceship.position);
+        
+        // Configura os controles
+        controls.lookSpeed = 0.1;
+        controls.movementSpeed = 400;
+        
+        // Inicia o loop de animação
+        animate();
     } catch (error) {
         console.error("Error initializing scene:", error);
     }
@@ -393,9 +502,9 @@ function getTerrainHeight(position) {
     const intersects = raycaster.intersectObject(lunarTerrain);
     
     if (intersects.length > 0) {
-        return intersects[0].point.y;
+        return intersects[0].point.y + 400; // Aumentado a altura mínima
     }
-    return 0;
+    return 400; // Altura padrão se não houver interseção
 }
 
 function checkTerrainCollision(position, direction) {
@@ -408,8 +517,8 @@ function checkTerrainCollision(position, direction) {
     const downIntersects = raycaster.intersectObject(lunarTerrain);
     
     return {
-        front: frontIntersects.length > 0 && frontIntersects[0].distance < 200,
-        ground: downIntersects.length > 0 && downIntersects[0].distance < minHeight
+        front: frontIntersects.length > 0 && frontIntersects[0].distance < 300,
+        ground: downIntersects.length > 0 && downIntersects[0].distance < 400
     };
 }
 
@@ -543,85 +652,227 @@ function createSun() {
     return { sun, corona, glow, sunLight };
 }
 
+// Função para criar a tela de stream
+function createStreamScreen() {
+    // Criar elemento DOM para o stream (frente)
+    const streamElement = document.createElement('div');
+    streamElement.style.width = STREAM_WIDTH + 'px';
+    streamElement.style.height = STREAM_HEIGHT + 'px';
+    streamElement.style.backgroundColor = '#000000';
+    streamElement.style.border = '20px solid #ff6600';
+    streamElement.style.borderRadius = '15px';
+    streamElement.style.overflow = 'hidden';
+    streamElement.style.pointerEvents = 'auto';
+    
+    // Criar elemento DOM para o stream (verso - clone do primeiro)
+    const streamElementBack = streamElement.cloneNode(true);
+    
+    // Título da stream (frente)
+    const titleElement = document.createElement('div');
+    titleElement.textContent = '🔴 LIVE STREAM 🔴';
+    titleElement.style.backgroundColor = '#ff0000';
+    titleElement.style.color = 'white';
+    titleElement.style.padding = '15px';
+    titleElement.style.fontSize = '24px';
+    titleElement.style.fontWeight = 'bold';
+    titleElement.style.textAlign = 'center';
+    titleElement.style.animation = 'blink 1s infinite';
+    streamElement.appendChild(titleElement);
+    
+    // Título da stream (verso)
+    const titleElementBack = titleElement.cloneNode(true);
+    streamElementBack.appendChild(titleElementBack);
+    
+    // Iframe do stream (frente)
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = (STREAM_HEIGHT - 54) + 'px';
+    iframe.style.border = 'none';
+    iframe.src = 'https://203779.bitmap.stream/embed/video';
+    iframe.allowFullscreen = true;
+    streamElement.appendChild(iframe);
+    
+    // Iframe do stream (verso)
+    const iframeBack = iframe.cloneNode(true);
+    streamElementBack.appendChild(iframeBack);
+    
+    // Criar grupo para conter os dois lados do stream
+    const streamGroup = new THREE.Group();
+    
+    // Criar objeto CSS3D para frente
+    const streamObject = new CSS3DObject(streamElement);
+    streamObject.position.set(2000, 1500, -2000);
+    streamObject.scale.set(3, 3, 3);
+    
+    // Criar objeto CSS3D para verso (igual à frente)
+    const streamObjectBack = new CSS3DObject(streamElementBack);
+    streamObjectBack.position.set(2000, 1500, -2001); // Posição ligeiramente atrás
+    streamObjectBack.scale.set(3, 3, 3);
+    streamObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
+    
+    // Adiciona os dois lados ao grupo
+    streamGroup.add(streamObject);
+    streamGroup.add(streamObjectBack);
+    
+    cssScene.add(streamGroup);
+    streamScreen = streamGroup;
+    
+    // Ajusta as luzes para a nova posição
+    const spotLight1 = new THREE.SpotLight(0xff6600, 2);
+    spotLight1.position.set(1600, 1600, -1900); // Ajustada altura da luz
+    spotLight1.target.position.copy(streamObject.position);
+    scene.add(spotLight1);
+    scene.add(spotLight1.target);
+    
+    const spotLight2 = new THREE.SpotLight(0xff6600, 2);
+    spotLight2.position.set(2400, 1600, -1900); // Ajustada altura da luz
+    spotLight2.target.position.copy(streamObject.position);
+    scene.add(spotLight2);
+    scene.add(spotLight2.target);
+    
+    // Ajusta o halo para o novo tamanho
+    const haloGeometry = new THREE.PlaneGeometry(STREAM_WIDTH * 3.3, STREAM_HEIGHT * 3.3);
+    const haloMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff6600,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+    });
+    
+    // Cria halos para ambos os lados
+    const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+    const haloBack = new THREE.Mesh(haloGeometry, haloMaterial.clone());
+    
+    halo.position.copy(streamObject.position);
+    halo.position.z += 1;
+    haloBack.position.copy(streamObjectBack.position);
+    haloBack.position.z -= 1;
+    haloBack.rotation.y = Math.PI;
+    haloBack.scale.x = -1; // Espelha o halo traseiro também
+    
+    scene.add(halo);
+    scene.add(haloBack);
+    
+    // Adiciona colisão para o stream
+    const streamCollider = new THREE.Box3().setFromObject(streamGroup);
+    
+    // Animar os halos
+    function animateHalo() {
+        requestAnimationFrame(animateHalo);
+        const opacity = 0.3 + Math.sin(Date.now() * 0.003) * 0.2;
+        halo.material.opacity = opacity;
+        haloBack.material.opacity = opacity;
+    }
+    animateHalo();
+    
+    return { streamGroup, streamCollider };
+}
+
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
     
     try {
-        controls.update(delta);
-
-        // Update spaceship position and rotation
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
+        const delta = clock.getDelta();
         
+        // Atualiza a nave se existir
         if (spaceship) {
-            // Posição base da nave
-            const nextPosition = camera.position.clone();
-            nextPosition.x += cameraDirection.x * 600;
-            nextPosition.z += cameraDirection.z * 600;
-            nextPosition.y = camera.position.y - 200;
+            // Calcula a velocidade base e velocidade com sprint
+            const baseSpeed = 6400;
+            const currentSpeed = sprint ? baseSpeed * 2 : baseSpeed;
             
-            // Obtém altura do terreno com offset para verificação antecipada
+            // Calcula o movimento da nave
+            const movement = new THREE.Vector3(0, 0, 0);
+            
+            // Direção para frente/trás
+            if (moveForward) {
+                movement.z = -currentSpeed * delta;
+            }
+            if (moveBackward) {
+                movement.z = currentSpeed * delta;
+            }
+            
+            // Direção para os lados
+            if (moveLeft) {
+                movement.x = -currentSpeed * delta;
+            }
+            if (moveRight) {
+                movement.x = currentSpeed * delta;
+            }
+            
+            // Movimento vertical
+            if (moveUp) {
+                movement.y = currentSpeed * delta;
+            }
+            if (moveDown) {
+                movement.y = -currentSpeed * delta;
+            }
+            
+            // Aplica o movimento vertical baseado no mouse
+            movement.y += verticalSpeed * delta;
+            
+            // Aplica amortecimento na velocidade vertical
+            verticalSpeed *= verticalDamping;
+            
+            // Aplica a rotação ao movimento
+            movement.applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRotationY);
+            
+            // Atualiza a posição da nave
+            const nextPosition = spaceship.position.clone().add(movement);
+            
+            // Verifica limites do terreno
+            const terrainLimit = 7000;
+            nextPosition.x = Math.max(-terrainLimit, Math.min(terrainLimit, nextPosition.x));
+            nextPosition.z = Math.max(-terrainLimit, Math.min(terrainLimit, nextPosition.z));
+            
+            // Mantém uma altura mínima acima do terreno
             const terrainHeight = getTerrainHeight(nextPosition);
-            const minSafeHeight = terrainHeight + minHeight;
+            nextPosition.y = Math.max(terrainHeight + 200, nextPosition.y);
             
-            // Verifica colisões antes de mover
-            const collision = checkTerrainCollision(nextPosition, cameraDirection);
+            // Verifica colisão com o stream
+            const streamBox = new THREE.Box3().setFromObject(streamScreen);
+            const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
             
-            // Limites do terreno lunar (metade do tamanho do terreno)
-            const terrainLimit = 7500;
-            
-            // Verifica se a próxima posição está dentro dos limites do terreno
-            if (Math.abs(nextPosition.x) > terrainLimit || Math.abs(nextPosition.z) > terrainLimit) {
-                // Se estiver fora dos limites, mantém a posição anterior
-                nextPosition.x = spaceship.position.x;
-                nextPosition.z = spaceship.position.z;
+            if (!streamBox.intersectsBox(spaceshipBox)) {
+                // Atualiza posição da nave com suavização
+                spaceship.position.lerp(nextPosition, 0.1);
             }
             
-            // Ajusta altura baseado no terreno e colisões
-            if (collision.ground || nextPosition.y < minSafeHeight) {
-                nextPosition.y = minSafeHeight + 200; // Mantém distância segura do solo
-            }
-
-            if (collision.front) {
-                nextPosition.y += 200; // Aumenta altura significativamente se houver obstáculo
-            }
-
-            // Atualiza posição com suavização
-            spaceship.position.lerp(nextPosition, 0.08);
-
-            // Rotação da nave
-            const targetRotation = new THREE.Euler();
-            targetRotation.y = Math.atan2(cameraDirection.x, cameraDirection.z);
+            // Atualiza rotação da nave
+            spaceship.rotation.y = targetRotationY + Math.PI; // Adiciona PI para manter os propulsores para trás
             
-            // Mantém a nave mais reta
-            const pitchAngle = -cameraDirection.y * 0.05;
+            // Posiciona a câmera atrás da nave
+            const cameraOffset = new THREE.Vector3(0, 200, 1200);
+            cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRotationY);
             
-            // Aplica rotação suavemente
-            spaceship.rotation.x = pitchAngle;
-            spaceship.rotation.y = targetRotation.y;
-            spaceship.rotation.z = -controls.moveRight * 0.01;
-
-            // Limita a câmera dentro dos limites do terreno
-            if (Math.abs(camera.position.x) > terrainLimit || Math.abs(camera.position.z) > terrainLimit) {
-                // Se a câmera estiver fora dos limites, move de volta para dentro
-                if (Math.abs(camera.position.x) > terrainLimit) {
-                    camera.position.x = Math.sign(camera.position.x) * terrainLimit;
+            const desiredCameraPosition = spaceship.position.clone().add(cameraOffset);
+            camera.position.lerp(desiredCameraPosition, 0.1);
+            
+            // Faz a câmera olhar para a nave
+            const lookAtPosition = spaceship.position.clone();
+            lookAtPosition.y += 50;
+            camera.lookAt(lookAtPosition);
+            
+            // Garante que a nave sempre fique visível
+            spaceship.traverse((child) => {
+                if (child.isMesh) {
+                    child.renderOrder = 1; // Força a nave a ser renderizada por último
+                    child.material.depthTest = true;
+                    child.material.depthWrite = true;
+                    child.material.transparent = true;
+                    child.material.opacity = 1;
                 }
-                if (Math.abs(camera.position.z) > terrainLimit) {
-                    camera.position.z = Math.sign(camera.position.z) * terrainLimit;
-                }
-            }
-
-            // Impede que a câmera fique muito baixa
-            const cameraMinHeight = getTerrainHeight(camera.position) + minHeight + 400;
-            if (camera.position.y < cameraMinHeight) {
-                camera.position.y = cameraMinHeight;
-            }
+            });
         }
 
-        renderer.render(scene, camera);
+        // Renderiza as cenas
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+        if (cssRenderer && cssScene && camera) {
+            cssRenderer.render(cssScene, camera);
+        }
+
     } catch (error) {
         console.error("Error in animation loop:", error);
     }
@@ -631,8 +882,13 @@ function animate() {
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
-    controls.handleResize();
+    cssRenderer.setSize(window.innerWidth, window.innerHeight);
+    
+    if (controls) {
+        controls.handleResize();
+    }
 });
 
 // Instructions
@@ -647,11 +903,15 @@ instructions.style.borderRadius = '5px';
 instructions.style.fontFamily = 'Arial';
 instructions.innerHTML = `
     Controles:<br>
-    Click Esquerdo/W - Mover para frente<br>
-    Click Direito/S - Mover para trás<br>
+    W - Mover para frente<br>
+    S - Mover para trás<br>
     A - Mover para esquerda<br>
     D - Mover para direita<br>
-    Mouse - Olhar ao redor
+    Espaço - Subir<br>
+    Control - Descer<br>
+    Shift - Correr (2x velocidade)<br>
+    Mouse - Olhar ao redor<br>
+    Click - Ativar controle do mouse
 `;
 document.body.appendChild(instructions);
 
