@@ -586,7 +586,7 @@ function generateTexture(data, width, height) {
     canvas.height = height;
 
     const context = canvas.getContext('2d');
-    context.fillStyle = '#8B4513'; // Cor base marrom
+    context.fillStyle = '#4A4A4A'; // Cor base cinza escuro
     context.fillRect(0, 0, width, height);
 
     const image = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -600,10 +600,10 @@ function generateTexture(data, width, height) {
 
         const shade = vector3.dot(sun);
 
-        // Cores do terreno lunar (tons de marrom)
-        imageData[i] = (139 + shade * 128) * (0.5 + data[j] * 0.007);     // R - mais vermelho
-        imageData[i + 1] = (69 + shade * 128) * (0.5 + data[j] * 0.007);  // G - menos verde
-        imageData[i + 2] = (19 + shade * 128) * (0.5 + data[j] * 0.007);  // B - menos azul
+        // Cores do terreno lunar (tons de cinza-marrom)
+        imageData[i] = (74 + shade * 80) * (0.5 + data[j] * 0.007);     // R - reduzido
+        imageData[i + 1] = (69 + shade * 70) * (0.5 + data[j] * 0.007);  // G - reduzido
+        imageData[i + 2] = (65 + shade * 60) * (0.5 + data[j] * 0.007);  // B - reduzido
         imageData[i + 3] = 255;
     }
 
@@ -658,7 +658,7 @@ function createExclusiveLunarTerrain() {
         canvas.height = height;
 
         const context = canvas.getContext('2d');
-        context.fillStyle = '#A04513'; // Cor base mais avermelhada
+        context.fillStyle = '#5A4A40'; // Cor base marrom-acinzentado
         context.fillRect(0, 0, width, height);
 
         const image = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -672,10 +672,10 @@ function createExclusiveLunarTerrain() {
 
             const shade = vector3.dot(sun);
 
-            // Cores do terreno exclusivo (tons mais avermelhados)
-            imageData[i] = (169 + shade * 128) * (0.5 + data[j] * 0.007);     // R - mais vermelho
-            imageData[i + 1] = (59 + shade * 128) * (0.5 + data[j] * 0.007);  // G - menos verde
-            imageData[i + 2] = (19 + shade * 128) * (0.5 + data[j] * 0.007);  // B - menos azul
+            // Cores do terreno exclusivo (tons mais marrom-acinzentados)
+            imageData[i] = (90 + shade * 80) * (0.5 + data[j] * 0.007);     // R - reduzido
+            imageData[i + 1] = (74 + shade * 70) * (0.5 + data[j] * 0.007);  // G - reduzido
+            imageData[i + 2] = (64 + shade * 60) * (0.5 + data[j] * 0.007);  // B - reduzido
             imageData[i + 3] = 255;
         }
 
