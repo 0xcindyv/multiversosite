@@ -71,6 +71,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Adicionar evento de clique global para o botão Mint
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(event) {
+        const mintButton = document.getElementById('mint-multiverso-pass-button');
+        if (mintButton && (event.target === mintButton || mintButton.contains(event.target))) {
+            console.log('Clique no botão Mint detectado via documento!');
+            window.open('https://inscribenow.io/collections/38ad28c5d73e92ec', '_blank');
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }, true); // Usar captura para garantir que o evento seja processado antes
+});
+
 // Configurações globais
 const STREAM_WIDTH = 800;
 const STREAM_HEIGHT = 450;
@@ -295,7 +308,19 @@ window.addEventListener('mousemove', (event) => {
 });
 
 // Pointer lock control
-renderer.domElement.addEventListener('click', () => {
+renderer.domElement.addEventListener('click', (event) => {
+    // Verificar se o clique foi no botão Mint ou em seus elementos filhos
+    const mintButton = document.getElementById('mint-multiverso-pass-button');
+    
+    // Se o clique foi no botão ou em qualquer elemento dentro dele, não fazer nada
+    if (mintButton && (event.target === mintButton || mintButton.contains(event.target) || event.target.closest('#mint-multiverso-pass-button'))) {
+        console.log('Clique no botão Mint detectado via renderer! Ignorando pointer lock.');
+        event.preventDefault();
+        event.stopPropagation();
+        return; // Não solicitar pointer lock se o clique foi no botão
+    }
+    
+    // Se não foi no botão, solicitar pointer lock
     renderer.domElement.requestPointerLock();
 });
 
@@ -749,6 +774,9 @@ let exclusiveLunarTerrain; // Nova referência para o terreno exclusivo
 let mysticalPortal;
 let portalMessageElement;
 
+// Adicionar variável global para o botão
+let mintButton;
+
 function init() {
     try {
         // Limpa as cenas
@@ -788,6 +816,7 @@ function init() {
         const sun = createSun();
         mysticalPortal = createMysticalPortal();
         createPortalMessage();
+        mintButton = createMintButton(); // Armazenar o botão em uma variável global
         
         // Posiciona a nave acima do terreno lunar
         spaceship.position.set(0, 800, 0);
@@ -1609,6 +1638,8 @@ function animate() {
             checkMultiversoPassStatus();
         }
         
+        // Não precisamos mais atualizar o botão Mint, pois ele agora é um elemento HTML fixo
+        
         // Atualiza a nave se existir
         if (spaceship && mysticalPortal) {
             // Adiciona rotação contínua da nave
@@ -2178,3 +2209,165 @@ function createDustParticleTexture() {
     
     return texture;
 }
+
+// ... existing code ...
+function createMintButton() {
+    // Remover qualquer botão existente para evitar duplicatas
+    const existingButton = document.getElementById('mint-multiverso-pass-button');
+    if (existingButton) {
+        existingButton.remove();
+    }
+    
+    // Criar elemento DOM para o botão Mint como um link <a> para garantir clicabilidade
+    const mintButtonElement = document.createElement('a');
+    mintButtonElement.id = 'mint-multiverso-pass-button';
+    mintButtonElement.href = 'https://inscribenow.io/collections/38ad28c5d73e92ec';
+    mintButtonElement.target = '_blank'; // Abrir em nova aba
+    mintButtonElement.style.width = '400px'; // Botão mais largo
+    mintButtonElement.style.height = '100px'; // Botão mais alto
+    mintButtonElement.style.backgroundColor = '#FF6600'; // Cor laranja
+    mintButtonElement.style.border = '8px solid #FFD700'; // Borda dourada mais grossa
+    mintButtonElement.style.borderRadius = '20px'; // Bordas mais arredondadas
+    mintButtonElement.style.overflow = 'hidden';
+    mintButtonElement.style.cursor = 'pointer'; // Garantir que o cursor seja uma mão
+    mintButtonElement.style.pointerEvents = 'auto'; // Garantir que eventos de ponteiro sejam capturados
+    mintButtonElement.style.boxShadow = '0 0 30px #FFD700, 0 0 60px #FF6600'; // Brilho dourado mais intenso com duplo halo
+    mintButtonElement.style.transition = 'all 0.3s ease';
+    mintButtonElement.style.display = 'block'; // Garantir que seja um bloco
+    mintButtonElement.style.textDecoration = 'none'; // Remover sublinhado do link
+    
+    // Texto do botão
+    const textElement = document.createElement('div');
+    textElement.textContent = '🔥🔥 MINT MULTIVERSO PASS 🔥🔥'; // Mais emojis para chamar atenção
+    textElement.style.color = 'white';
+    textElement.style.padding = '10px';
+    textElement.style.fontSize = '24px'; // Texto maior
+    textElement.style.fontWeight = 'bold';
+    textElement.style.textAlign = 'center';
+    textElement.style.lineHeight = '80px'; // Ajustado para o novo tamanho
+    textElement.style.textShadow = '0 0 10px #FFD700, 0 0 20px #FFD700'; // Sombra de texto dourada mais intensa
+    mintButtonElement.appendChild(textElement);
+    
+    // Adicionar evento de hover
+    mintButtonElement.addEventListener('mouseover', function() {
+        this.style.backgroundColor = '#FF8C00'; // Laranja mais claro no hover
+        this.style.transform = 'scale(1.1)'; // Efeito de escala maior
+        this.style.boxShadow = '0 0 40px #FFD700, 0 0 80px #FF6600'; // Brilho mais intenso
+    });
+    
+    mintButtonElement.addEventListener('mouseout', function() {
+        this.style.backgroundColor = '#FF6600'; // Volta ao laranja original
+        this.style.transform = 'scale(1)';
+        this.style.boxShadow = '0 0 30px #FFD700, 0 0 60px #FF6600'; // Brilho normal
+    });
+    
+    // Adicionar evento de clique explícito para garantir que o link seja aberto
+    mintButtonElement.addEventListener('click', function(event) {
+        console.log('Botão Mint clicado! Abrindo link...');
+        window.open('https://inscribenow.io/collections/38ad28c5d73e92ec', '_blank');
+        event.stopPropagation(); // Impedir que o evento se propague para o renderer
+    });
+    
+    // Criar um wrapper para o botão para melhorar a clicabilidade
+    const buttonWrapper = document.createElement('div');
+    buttonWrapper.style.width = '100%';
+    buttonWrapper.style.height = '100%';
+    buttonWrapper.style.position = 'relative';
+    buttonWrapper.appendChild(mintButtonElement);
+    
+    // Criar objeto CSS3D para o wrapper do botão
+    const mintButtonObject = new CSS3DObject(buttonWrapper);
+    
+    // Posicionar o botão diretamente acima do portal
+    // O portal está em (0, 1600, -7000)
+    // A seta triângulo está em y = 2133 + 1600 (posição do portal)
+    const terrainLimit = 7000;
+    const portalY = 1600;
+    const markerY = 2133; // Altura da seta triângulo em relação ao portal
+    const markerMaxY = Math.sin(Date.now() * 0.002) * 267; // Altura máxima da animação da seta
+    
+    // Posicionar o botão 400 unidades acima da seta triângulo
+    // Isso garante que ele fique visível e alinhado com o portal
+    const buttonY = portalY + markerY + markerMaxY + 400;
+    mintButtonObject.position.set(0, buttonY, -terrainLimit);
+    
+    // Aumentar o tamanho do botão para garantir melhor visibilidade
+    mintButtonObject.scale.set(7, 7, 7);
+    
+    // Adicionar o botão à cena CSS
+    cssScene.add(mintButtonObject);
+    
+    // Adicionar luz de destaque para o botão (ajustada para a nova posição)
+    const mintButtonLight = new THREE.PointLight(0xFF6600, 3, 3000);
+    mintButtonLight.position.set(0, buttonY, -terrainLimit + 200);
+    scene.add(mintButtonLight);
+    
+    // Criar um grupo para conter a luz
+    const mintButtonGroup = new THREE.Group();
+    mintButtonGroup.add(mintButtonLight);
+    
+    // Animação pulsante para a luz
+    function animateMintButtonLight() {
+        mintButtonLight.intensity = 3 + Math.sin(Date.now() * 0.005) * 2; // Animação mais intensa
+        requestAnimationFrame(animateMintButtonLight);
+    }
+    
+    // Iniciar a animação da luz
+    animateMintButtonLight();
+    
+    // Adicionar evento global para garantir que o botão seja clicável
+    document.addEventListener('click', function(event) {
+        // Verificar se o clique foi no botão ou em seus elementos filhos
+        if (event.target === mintButtonElement || 
+            event.target === textElement || 
+            mintButtonElement.contains(event.target)) {
+            console.log('Clique global no botão Mint detectado! Abrindo link...');
+            window.open('https://inscribenow.io/collections/38ad28c5d73e92ec', '_blank');
+            event.stopPropagation(); // Impedir que o evento se propague
+        }
+    }, true); // Usar captura para garantir que o evento seja processado antes
+    
+    console.log("Botão Mint criado e posicionado em:", 0, buttonY, -terrainLimit);
+    
+    return mintButtonObject;
+}
+
+// ... existing code ...
+
+// Adicionar raycaster para detectar quando o mouse está sobre o botão
+
+// Função para verificar se o mouse está sobre o botão Mint
+function checkMintButtonHover(event) {
+    // Calcular a posição do mouse em coordenadas normalizadas (-1 a +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    
+    // Atualizar o raycaster com a posição do mouse e a câmera
+    uiRaycaster.setFromCamera(mouse, camera);
+    
+    // Verificar se o raio intersecta com o botão Mint
+    const mintButton = document.getElementById('mint-multiverso-pass-button');
+    if (mintButton) {
+        // Obter a posição do botão no espaço 3D
+        const terrainLimit = 7000;
+        const portalY = 1600;
+        const markerY = 2133; // Altura da seta triângulo em relação ao portal
+        const markerMaxY = Math.sin(Date.now() * 0.002) * 267; // Altura máxima da animação da seta
+        const buttonY = portalY + markerY + markerMaxY + 400;
+        const buttonPosition = new THREE.Vector3(0, buttonY, -terrainLimit);
+        
+        // Calcular a distância entre o raio e a posição do botão
+        const distance = uiRaycaster.ray.distanceToPoint(buttonPosition);
+        
+        // Se a distância for menor que um certo valor, consideramos que o mouse está sobre o botão
+        if (distance < 1500) { // Aumentamos a área de detecção
+            document.body.style.cursor = 'pointer'; // Mudar o cursor para uma mão
+        } else {
+            document.body.style.cursor = 'auto'; // Voltar o cursor para o padrão
+        }
+    }
+}
+
+// Adicionar evento de movimento do mouse para verificar hover no botão
+window.addEventListener('mousemove', checkMintButtonHover);
+
