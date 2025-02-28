@@ -11,7 +11,7 @@ Multiverso is an interactive 3D web experience built with Three.js that allows u
 - Lunar terrain with collision detection
 - Token-gated exclusive areas accessible via Bitcoin Ordinals Collection that provides access to educational content and classes
 - Multilingual support
-- Mobile and desktop compatibility
+- Desktop-only experience (not currently available for mobile devices)
 
 ## Technologies Used
 - Three.js for 3D rendering
@@ -98,6 +98,9 @@ The exclusive areas of the Multiverso are accessible only to holders of the Mult
 - Educational content and classes
 - Exclusive terrain and experiences
 - Special features and interactions
+
+## Device Compatibility
+Currently, Multiverso is designed for desktop browsers only. Mobile support is not available at this time.
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.

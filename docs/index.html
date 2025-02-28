@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
     <title>Multiverso - Versão Atualizada 2023</title>
     <style>
         body {
@@ -287,6 +288,29 @@
     
     <!-- Carregar a cena 3D -->
     <script type="module" src="js/main.js"></script>
+    
+    <!-- Script para forçar a recarga de texturas -->
+    <script>
+        // Forçar recarga de cache para texturas
+        window.addEventListener('load', function() {
+            // Adicionar timestamp para evitar cache de texturas
+            const timestamp = new Date().getTime();
+            const texturePaths = [
+                './textures/earth_daymap.jpg',
+                './textures/earth_bumpmap.jpg',
+                './textures/earth_specular.jpg',
+                './textures/earth_normal.jpg',
+                './textures/earth_clouds.jpg'
+            ];
+            
+            // Pré-carregar texturas
+            texturePaths.forEach(path => {
+                const img = new Image();
+                img.src = path + '?t=' + timestamp;
+                console.log('Pré-carregando textura:', path);
+            });
+        });
+    </script>
 </head>
 <body>
     <div id="container">
