@@ -1183,6 +1183,41 @@
             // Verificar disponibilidade das extensões imediatamente
             verificarExtensoes();
         });
+        
+        /**
+         * Função para iniciar a experiência completa após verificação do Multiverso Pass
+         * Esta função é chamada quando o acesso é concedido
+         */
+        function startExperience() {
+            console.log('Iniciando experiência completa para detentor de Multiverso Pass');
+            
+            // Definir variáveis globais para acesso ao terreno exclusivo
+            window.hasMultiversoPass = true;
+            window.hasAccess = true;
+            
+            // Verificar se a função init existe (função principal do main.js)
+            if (typeof init === 'function') {
+                // Reinicializar a cena para aplicar as permissões
+                console.log('Reinicializando cena com acesso completo');
+                init();
+            } else {
+                console.warn('Função init não encontrada. Tentando atualizar acesso diretamente.');
+                
+                // Tentar atualizar o acesso diretamente se a função updateExclusiveAccess existir
+                if (typeof updateExclusiveAccess === 'function') {
+                    updateExclusiveAccess(true);
+                }
+                
+                // Tentar tornar o terreno exclusivo visível diretamente
+                if (typeof exclusiveLunarTerrain !== 'undefined' && exclusiveLunarTerrain) {
+                    console.log('Tornando terreno exclusivo visível');
+                    exclusiveLunarTerrain.visible = true;
+                }
+            }
+            
+            // Mostrar mensagem de sucesso
+            mostrarSucesso('Acesso completo concedido! Você pode explorar todo o Multiverso agora.');
+        }
     </script>
 </body>
 </html> 
