@@ -206,21 +206,27 @@
             padding: 10px 15px;
             background-color: rgba(0, 0, 0, 0.7);
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
             z-index: 1000;
             display: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
         }
 
         .status-verified {
             color: #4CAF50;
+            border-left: 4px solid #4CAF50;
         }
 
         .status-pending {
             color: #FFC107;
+            border-left: 4px solid #FFC107;
         }
 
         .status-denied {
             color: #F44336;
+            border-left: 4px solid #F44336;
         }
 
         .verify-btn {
@@ -557,11 +563,8 @@
                     try {
                         mostrarStatus('Verificando Ordinals...', 'status-pending');
                         
-                        // Mostrar overlay de carregamento
-                        document.getElementById('access-overlay').style.display = 'flex';
-                        document.getElementById('loading-spinner').style.display = 'block';
-                        document.getElementById('verify-btn').style.display = 'none';
-                        document.getElementById('access-message').textContent = 'Verificando posse do Multiverso Pass...';
+                        // Fechar o overlay imediatamente - não queremos mostrar a janela grande
+                        document.getElementById('access-overlay').style.display = 'none';
                         
                         console.log('Verificando Ordinals para o endereço:', address);
                         
@@ -796,37 +799,16 @@
                     const lang = getCurrentLanguage();
                     const texts = verificationTexts[lang];
                     
-                    // Atualizar UI
-                    document.getElementById('loading-spinner').style.display = 'none';
-                    document.getElementById('access-message').innerHTML = `
-                        <div style="color: #4CAF50; font-size: 24px; margin-bottom: 20px;">
-                            ✓ ${texts.accessGranted}
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            ${texts.foundMultiversoPass}
-                        </div>
-                        <div style="font-size: 14px; color: #888; margin-bottom: 20px;">
-                            ${ordinalsValidos[0].id || ordinalsValidos[0].inscriptionId}
-                        </div>
-                    `;
+                    // Fechar o overlay de acesso
+                    document.getElementById('access-overlay').style.display = 'none';
                     
-                    // Mostrar botão para acessar o conteúdo
-                    const accessButton = document.createElement('button');
-                    accessButton.className = 'verify-btn';
-                    accessButton.style.backgroundColor = '#4CAF50';
-                    accessButton.textContent = texts.accessContent;
-                    accessButton.onclick = function() {
-                        document.getElementById('access-overlay').style.display = 'none';
-                        mostrarStatus('Acesso Concedido', 'status-granted');
-                        
-                        // Iniciar experiência 3D
-                        if (typeof startExperience === 'function') {
-                            startExperience();
-                        }
-                    };
+                    // Mostrar apenas o status no canto inferior esquerdo
+                    mostrarStatus('Acesso Concedido', 'status-verified');
                     
-                    document.getElementById('access-message').appendChild(accessButton);
-                    mostrarStatus('Acesso Concedido', 'status-granted');
+                    // Iniciar experiência 3D
+                    if (typeof startExperience === 'function') {
+                        startExperience();
+                    }
                 },
                 
                 // Negar acesso
@@ -834,6 +816,11 @@
                     console.log('Acesso negado para o endereço:', address);
                     hasAccess = false;
                     hasMultiversoPass = false;
+                    
+                    // Fechar o overlay - não queremos mostrar a janela grande
+                    document.getElementById('access-overlay').style.display = 'none';
+                    
+                    // Mostrar apenas o status no canto inferior esquerdo
                     mostrarStatus('Acesso Negado', 'status-denied');
                 }
             };
@@ -980,6 +967,24 @@
             statusElement.className = '';
             statusElement.classList.add(classe);
             statusElement.style.display = 'block';
+            
+            // Adicionar animação de fade-in
+            statusElement.style.opacity = '0';
+            setTimeout(() => {
+                statusElement.style.opacity = '1';
+            }, 10);
+            
+            // Manter o status visível por mais tempo (10 segundos)
+            // Não esconder automaticamente o status quando for "Acesso Concedido"
+            if (mensagem !== 'Acesso Concedido' && mensagem !== 'Acesso Negado') {
+                setTimeout(() => {
+                    // Animação de fade-out
+                    statusElement.style.opacity = '0';
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 500);
+                }, 10000);
+            }
         }
         
         // Function to update all UI elements based on current language
