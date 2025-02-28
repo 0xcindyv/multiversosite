@@ -11,6 +11,9 @@ The exclusive areas of the Multiverso are accessible only to holders of the Mult
 - Exclusive terrain and experiences
 - Special features and interactions
 
+## Device Compatibility
+Currently, Multiverso is designed for desktop browsers only. Mobile support is not available at this time.
+
 ## Earth Texture Issue
 
 If the Earth is not rendering correctly on GitHub Pages, please ensure the following:
@@ -32,6 +35,25 @@ If the Earth is not rendering correctly on GitHub Pages, please ensure the follo
 3. **Base URL Configuration**: The `index.html` file should include a base URL tag:
    ```html
    <base href="./">
+   ```
+
+4. **Texture Preloading**: A preloading script has been added to force texture loading:
+   ```javascript
+   window.addEventListener('load', function() {
+       const timestamp = new Date().getTime();
+       const texturePaths = [
+           './textures/earth_daymap.jpg',
+           './textures/earth_bumpmap.jpg',
+           './textures/earth_specular.jpg',
+           './textures/earth_normal.jpg',
+           './textures/earth_clouds.jpg'
+       ];
+       
+       texturePaths.forEach(path => {
+           const img = new Image();
+           img.src = path + '?t=' + timestamp;
+       });
+   });
    ```
 
 ## File Structure
