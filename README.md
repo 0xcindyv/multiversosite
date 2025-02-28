@@ -1,7 +1,7 @@
 # Multiverso - 3D Interactive Space Experience
 
 ## Overview
-Multiverso is an interactive 3D web experience built with Three.js that allows users to explore a virtual space environment. The project features a navigable spaceship, celestial bodies including Earth and the Sun, a lunar terrain, and a special portal that grants access to exclusive areas for users with a Multiverso Pass.
+Multiverso is an interactive 3D web experience built with Three.js that allows users to explore a virtual space environment. The project features a navigable spaceship, celestial bodies including Earth and the Sun, a lunar terrain, and a special portal that grants access to exclusive areas for users with a Multiverso Pass Bitcoin Ordinals Collection.
 
 ## Features
 - Interactive 3D space environment
@@ -9,7 +9,7 @@ Multiverso is an interactive 3D web experience built with Three.js that allows u
 - Detailed Earth model with atmosphere and cloud layers
 - Dynamic Sun with animated surface effects
 - Lunar terrain with collision detection
-- Token-gated exclusive areas accessible via a portal
+- Token-gated exclusive areas accessible via Bitcoin Ordinals Collection that provides access to educational content and classes
 - Multilingual support
 - Mobile and desktop compatibility
 
@@ -17,7 +17,7 @@ Multiverso is an interactive 3D web experience built with Three.js that allows u
 - Three.js for 3D rendering
 - JavaScript for application logic
 - HTML/CSS for UI elements
-- Web3 integration for blockchain connectivity
+- Web3 integration for Bitcoin Ordinals blockchain connectivity
 
 ## Local Development
 To run the project locally:
@@ -92,6 +92,12 @@ The Earth model requires the following texture files:
 - **Shift**: Descend
 - **Mouse**: Look around
 - **Click**: Interact with objects
+
+## Bitcoin Ordinals Access
+The exclusive areas of the Multiverso are accessible only to holders of the Multiverso Pass Bitcoin Ordinals Collection. These NFTs on the Bitcoin blockchain grant access to:
+- Educational content and classes
+- Exclusive terrain and experiences
+- Special features and interactions
 
 ## Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
