@@ -979,76 +979,153 @@ function createLunarTerrain() {
 function createEarth() {
     const earthGeometry = new THREE.SphereGeometry(1600, 128, 128); // Dobro do tamanho anterior
     
-    // Carrega texturas da Terra
+    // Carrega texturas da Terra com método alternativo
     const textureLoader = new THREE.TextureLoader();
     
-    const earthMaterial = new THREE.MeshPhongMaterial({
-        map: textureLoader.load('/textures/earth_daymap.jpg'),
-        bumpMap: textureLoader.load('/textures/earth_bumpmap.jpg'),
-        bumpScale: 10,
-        specularMap: textureLoader.load('/textures/earth_specular.jpg'),
-        specular: new THREE.Color(0x333333),
-        shininess: 25,
-        normalMap: textureLoader.load('/textures/earth_normal.jpg'),
-        normalScale: new THREE.Vector2(6, 6)
-    });
-    
-    // Adiciona atmosfera à Terra com efeito de glow
-    const atmosphereGeometry = new THREE.SphereGeometry(1664, 128, 128); // Dobro do tamanho anterior
-    const atmosphereMaterial = new THREE.MeshPhongMaterial({
-        color: 0x4ca6ff,
-        transparent: true,
-        opacity: 0.2,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending
-    });
-
-    // Adiciona nuvens com textura
-    const cloudGeometry = new THREE.SphereGeometry(1624, 128, 128); // Dobro do tamanho anterior
-    const cloudMaterial = new THREE.MeshPhongMaterial({
-        map: textureLoader.load('/textures/earth_clouds.jpg'),
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending
-    });
-
-    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    
-    // Reposiciona a Terra para ficar mais distante
-    earth.position.set(4000, 4000, -8000); // Aumentada a altura (Y) de 2000 para 4000
-    atmosphere.position.copy(earth.position);
-    clouds.position.copy(earth.position);
-    
-    // Adiciona iluminação ambiente suave para a Terra
-    const earthAmbient = new THREE.AmbientLight(0x222222);
-    earthAmbient.position.copy(earth.position);
-    
-    // Adiciona luz direcional para simular luz solar
-    const earthLight = new THREE.DirectionalLight(0xffffff, 1);
-    earthLight.position.set(earth.position.x + 5000, earth.position.y, earth.position.z);
-    
-    // Grupo para manter todos os elementos da Terra juntos
-    const earthGroup = new THREE.Group();
-    earthGroup.add(earth);
-    earthGroup.add(atmosphere);
-    earthGroup.add(clouds);
-    earthGroup.add(earthAmbient);
-    earthGroup.add(earthLight);
-    
-    scene.add(earthGroup);
-    
-    // Adiciona animação de rotação completa
-    earth.rotation.y = Math.PI;
-    const animate = () => {
-        earth.rotation.y += 0.0005; // Velocidade de rotação mais lenta
-        clouds.rotation.y += 0.00055; // Nuvens girando um pouco mais rápido que a Terra
-        requestAnimationFrame(animate);
+    // Adicionar timestamp para evitar cache
+    const timestamp = new Date().getTime();
+    const texturePaths = {
+        daymap: './textures/earth_daymap.jpg?' + timestamp,
+        bumpmap: './textures/earth_bumpmap.jpg?' + timestamp,
+        specular: './textures/earth_specular.jpg?' + timestamp,
+        normal: './textures/earth_normal.jpg?' + timestamp,
+        clouds: './textures/earth_clouds.jpg?' + timestamp
     };
-    animate();
     
-    return { earthGroup, earth, atmosphere, clouds };
+    // Pré-carregar texturas e criar material quando todas estiverem carregadas
+    const textures = {};
+    let loadedCount = 0;
+    const totalTextures = Object.keys(texturePaths).length;
+    
+    // Função para criar materiais após carregamento
+    function createMaterials() {
+        console.log('Todas as texturas da Terra carregadas com sucesso!');
+        
+        const earthMaterial = new THREE.MeshPhongMaterial({
+            map: textures.daymap,
+            bumpMap: textures.bumpmap,
+            bumpScale: 10,
+            specularMap: textures.specular,
+            specular: new THREE.Color(0x333333),
+            shininess: 25,
+            normalMap: textures.normal,
+            normalScale: new THREE.Vector2(6, 6)
+        });
+        
+        // Adiciona atmosfera à Terra com efeito de glow
+        const atmosphereGeometry = new THREE.SphereGeometry(1664, 128, 128); // Dobro do tamanho anterior
+        const atmosphereMaterial = new THREE.MeshPhongMaterial({
+            color: 0x4ca6ff,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.BackSide,
+            blending: THREE.AdditiveBlending
+        });
+
+        // Adiciona nuvens com textura
+        const cloudGeometry = new THREE.SphereGeometry(1624, 128, 128); // Dobro do tamanho anterior
+        const cloudMaterial = new THREE.MeshPhongMaterial({
+            map: textures.clouds,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+        const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+        const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        
+        // Reposiciona a Terra para ficar mais distante
+        earth.position.set(4000, 4000, -8000); // Aumentada a altura (Y) de 2000 para 4000
+        atmosphere.position.copy(earth.position);
+        clouds.position.copy(earth.position);
+        
+        // Adiciona iluminação ambiente suave para a Terra
+        const earthAmbient = new THREE.AmbientLight(0x222222);
+        earthAmbient.position.copy(earth.position);
+        
+        // Adiciona luz direcional para simular luz solar
+        const earthLight = new THREE.DirectionalLight(0xffffff, 1);
+        earthLight.position.set(earth.position.x + 5000, earth.position.y, earth.position.z);
+        
+        // Grupo para manter todos os elementos da Terra juntos
+        const earthGroup = new THREE.Group();
+        earthGroup.add(earth);
+        earthGroup.add(atmosphere);
+        earthGroup.add(clouds);
+        earthGroup.add(earthAmbient);
+        earthGroup.add(earthLight);
+        
+        scene.add(earthGroup);
+        
+        // Adiciona animação de rotação completa
+        earth.rotation.y = Math.PI;
+        const animate = () => {
+            earth.rotation.y += 0.0005; // Velocidade de rotação mais lenta
+            clouds.rotation.y += 0.00055; // Nuvens girando um pouco mais rápido que a Terra
+            requestAnimationFrame(animate);
+        };
+        animate();
+        
+        return { earthGroup, earth, atmosphere, clouds };
+    }
+    
+    // Carregar cada textura individualmente
+    Object.keys(texturePaths).forEach(key => {
+        textureLoader.load(
+            texturePaths[key],
+            // Sucesso
+            function(texture) {
+                console.log(`Textura ${key} carregada com sucesso`);
+                textures[key] = texture;
+                loadedCount++;
+                
+                // Quando todas as texturas estiverem carregadas, criar os materiais
+                if (loadedCount === totalTextures) {
+                    return createMaterials();
+                }
+            },
+            // Progresso
+            function(xhr) {
+                console.log(`${key}: ${(xhr.loaded / xhr.total * 100)}% carregado`);
+            },
+            // Erro
+            function(error) {
+                console.error(`Erro ao carregar textura ${key}:`, error);
+                // Criar uma textura de fallback
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = key === 'clouds' ? 'rgba(255,255,255,0.5)' : '#1a4d7e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                if (key === 'daymap') {
+                    // Desenhar continentes básicos para a textura de fallback
+                    ctx.fillStyle = '#2a5d3e';
+                    ctx.beginPath();
+                    ctx.ellipse(150, 200, 100, 70, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(350, 250, 120, 80, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                const fallbackTexture = new THREE.CanvasTexture(canvas);
+                textures[key] = fallbackTexture;
+                loadedCount++;
+                
+                if (loadedCount === totalTextures) {
+                    return createMaterials();
+                }
+            }
+        );
+    });
+    
+    // Retornar um grupo vazio inicialmente, será preenchido quando as texturas carregarem
+    const tempGroup = new THREE.Group();
+    scene.add(tempGroup);
+    return { earthGroup: tempGroup, earth: null, atmosphere: null, clouds: null };
 }
 
 // Função para criar o Sol
