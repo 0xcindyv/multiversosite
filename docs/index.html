@@ -555,6 +555,26 @@
                     
                     // Mostrar status de acesso
                     mostrarStatus('Acesso Revogado', 'status-denied');
+                    
+                    // Atualizar acesso na cena 3D - transportar para área livre
+                    window.hasMultiversoPass = false;
+                    window.hasAccess = false;
+                    
+                    // Reinicializar a cena para aplicar as restrições
+                    if (typeof init === 'function') {
+                        console.log('Reinicializando cena após desconexão');
+                        init();
+                    } else if (typeof updateExclusiveAccess === 'function') {
+                        console.log('Atualizando acesso após desconexão');
+                        updateExclusiveAccess(false);
+                    }
+                    
+                    // Se existir terreno exclusivo, torná-lo invisível
+                    if (typeof exclusiveLunarTerrain !== 'undefined' && exclusiveLunarTerrain) {
+                        console.log('Tornando terreno exclusivo invisível');
+                        exclusiveLunarTerrain.visible = false;
+                    }
+                    
                     return true;
                 },
                 
