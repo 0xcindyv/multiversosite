@@ -10,12 +10,15 @@
             overflow: hidden;
             background-color: #000;
             font-family: Arial, sans-serif;
+            color: white;
         }
+
         #container {
             position: relative;
             width: 100%;
             height: 100vh;
         }
+
         canvas {
             position: absolute;
             top: 0;
@@ -24,6 +27,7 @@
             height: 100%;
             z-index: 1;
         }
+
         #css-renderer {
             position: absolute;
             top: 0;
@@ -33,6 +37,7 @@
             pointer-events: none;
             z-index: 2;
         }
+
         #error {
             position: fixed;
             top: 10px;
@@ -44,17 +49,210 @@
             z-index: 1000;
             border-radius: 5px;
         }
-        @keyframes blink {
-            0%, 100% { opacity: 1; background-color: #ff0000; }
-            50% { opacity: 0.8; background-color: #ff6600; }
+        
+        .wallet-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .wallet-btn:hover {
+            background-color: #ff8533;
+            transform: translateY(-2px);
+        }
+
+        .wallet-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Estilos para botões de ação */
+        .action-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10000 !important; /* Garantir que esteja acima de tudo */
+            pointer-events: auto !important; /* Garantir que receba eventos de clique */
+        }
+        
+        .action-button:hover {
+            background-color: #ff8533;
+            transform: translateY(-2px);
+        }
+        
+        .action-button-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10000 !important; /* Garantir que esteja acima de tudo */
+            pointer-events: auto !important; /* Garantir que receba eventos de clique */
+        }
+        
+        /* Botão de teste */
+        .test-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #00ff00;
+            color: black;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: fixed;
+            bottom: 70px;
+            left: 20px;
+            z-index: 10000 !important;
+            pointer-events: auto !important;
+        }
+
+        .wallet-menu {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .wallet-menu.active {
+            display: block;
+        }
+
+        .wallet-option {
+            display: block;
+            width: 100%;
+            padding: 10px 20px;
+            margin: 5px 0;
+            background: none;
+            border: 1px solid #ff6600;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .wallet-option:hover {
+            background-color: #ff6600;
+        }
+
+        /* Estilos para o token gating */
+        #access-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        #access-overlay h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #ff6600;
+        }
+
+        #access-overlay p {
+            font-size: 18px;
+            max-width: 600px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        #access-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .status-verified {
+            color: #4CAF50;
+        }
+
+        .status-pending {
+            color: #FFC107;
+        }
+
+        .status-denied {
+            color: #F44336;
+        }
+
+        .verify-btn {
+            padding: 12px 24px;
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .verify-btn:hover {
+            background-color: #ff8533;
+            transform: translateY(-2px);
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ff6600;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
-</head>
-<body>
-    <div id="container">
-        <div id="error"></div>
-    </div>
     
+    <!-- Importmap para Three.js -->
     <script type="importmap">
     {
         "imports": {
@@ -64,15 +262,723 @@
     }
     </script>
     
+    <!-- Script para Xverse via SatsConnect -->
+    <script src="https://unpkg.com/sats-connect@1.1.2/dist/lib.js"></script>
+    
+    <!-- Adicionar LaserEyes para melhor compatibilidade com carteiras -->
+    <script src="https://unpkg.com/@omnisat/lasereyes@latest/dist/index.umd.js"></script>
+    
+    <!-- NOVA IMPLEMENTAÇÃO: Scripts específicos para suporte direto à Xverse -->
     <script>
-        window.addEventListener('error', function(e) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.style.display = 'block';
-            errorDiv.textContent = 'Erro: ' + e.message;
-            console.error('Error:', e.message);
+        // Forçar carregamento de múltiplas versões do SatsConnect
+        document.addEventListener('DOMContentLoaded', function() {
+            const versoes = ['1.8.0', '1.7.0', '1.6.0', '1.5.0', '1.2.0', '1.1.2', '1.0.0', '0.7.0'];
+            for (let i = 0; i < versoes.length; i++) {
+                setTimeout(() => {
+                    const script = document.createElement('script');
+                    script.src = `https://unpkg.com/sats-connect@${versoes[i]}/dist/lib.js`;
+                    script.onload = () => console.log(`SatsConnect ${versoes[i]} carregado`);
+                    script.onerror = () => console.error(`Erro ao carregar SatsConnect ${versoes[i]}`);
+                    document.head.appendChild(script);
+                }, i * 200);
+            }
         });
     </script>
     
+    <!-- Carregar a cena 3D -->
     <script type="module" src="js/main.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="error"></div>
+        
+        <!-- Botão de conexão e menu de carteiras -->
+        <button id="connect-btn" class="wallet-btn">Conectar Carteira</button>
+        <div id="wallet-menu" class="wallet-menu">
+            <button id="unisat-btn" class="wallet-option">Unisat</button>
+            <button id="disconnect-btn" class="wallet-option" data-pt="Desconectar" data-en="Disconnect">Desconectar</button>
+        </div>
+        
+        <!-- Status de acesso -->
+        <div id="access-status"></div>
+        
+        <!-- Overlay de acesso restrito (inicialmente oculto) -->
+        <div id="access-overlay" style="display: none;">
+            <h2 id="access-title" data-pt="Acesso Restrito" data-en="Restricted Access">Acesso Restrito</h2>
+            <p id="access-message">Esta área é exclusiva para detentores de Ordinals da coleção Multiverso.</p>
+            <div id="loading-spinner" class="loading-spinner"></div>
+            <button id="verify-btn" class="verify-btn" style="display: none;" data-pt="Verificar Acesso" data-en="Verify Access">Verificar Acesso</button>
+            <button id="close-overlay-btn" class="verify-btn" style="background-color: #333; margin-top: 10px;" data-pt="Voltar" data-en="Back">Voltar</button>
+        </div>
+    </div>
+    
+    <!-- Script para conexão de carteiras -->
+    <script>
+        // Variáveis globais
+        window.walletConnected = false;
+        
+        // Lista de IDs Ordinals válidos para acesso
+        const multiversoPassIds = [
+            "e15a9d0ffa88f39aebe6a0ef099f86ae5e3147dae0cc42106159faa2da8a0c29i0",
+            "e15a9d0ffa88f39aebe6a0ef099f86ae5e3147dae0cc42106159faa2da8a0c29i1",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai0",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai1",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai2",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai3",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai4",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai5",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai6",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai7",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai8",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai9",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai10",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai11",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai12",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai13",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai14",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai15",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai16",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai17",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai18",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai19",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai20",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai21",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai22",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai23",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai24",
+            "3b4699ee187ff6a2b8687887456a2747c0e344a94c1ee7637076ff64d984debai25",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi0",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi1",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi2",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi3",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi4",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi5",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi6",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi7",
+            "c5027efa65455f193c8206a69eaadd571b0adbd50882ca3fa3d462e3cbf6952bi8",
+            "f78ea8bbda84aef55c81364c8d851ab3987650d65454528d6be67bdfb55cf42ci0",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei0",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei1",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei2",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei3",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei4",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei5",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei6",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei7",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei8",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei9",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei10",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei11",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei12",
+            "5b602ef2f789beda1602ee12ca564fce60b8bafb332e782b798a979bef00ca8ei13",
+            "f133d374f1337216a11ad1daf61115b16fad7c42b84c1736da9eae707b269ecei0",
+            "f133d374f1337216a11ad1daf61115b16fad7c42b84c1736da9eae707b269ecei1",
+            "f133d374f1337216a11ad1daf61115b16fad7c42b84c1736da9eae707b269ecei2",
+            "f133d374f1337216a11ad1daf61115b16fad7c42b84c1736da9eae707b269ecei3",
+            "f133d374f1337216a11ad1daf61115b16fad7c42b84c1736da9eae707b269ecei4",
+            "f133d374f1337216a11ad1daf61115b16fad7c42b84c1736da9eae707b269ecei5",
+            "899b77ec8b6b5500ca3fada1fefd406b6ebebf8064e2f6f8b301fbb9ed0483bei0",
+            "899b77ec8b6b5500ca3fada1fefd406b6ebebf8064e2f6f8b301fbb9ed0483bei1",
+            "899b77ec8b6b5500ca3fada1fefd406b6ebebf8064e2f6f8b301fbb9ed0483bei2",
+            "899b77ec8b6b5500ca3fada1fefd406b6ebebf8064e2f6f8b301fbb9ed0483bei3",
+            "899b77ec8b6b5500ca3fada1fefd406b6ebebf8064e2f6f8b301fbb9ed0483bei4",
+            "899b77ec8b6b5500ca3fada1fefd406b6ebebf8064e2f6f8b301fbb9ed0483bei5",
+            "9aae4076c1acbb752c798d002a29c8b5af177f22f88d5a17ddee76b0663eef7fi0",
+            "96052c2b0109b571aabeb499df9397670e6ac5f5081237b82570209707d5e7e2i0",
+            "28d12527eb21ed70a3f48dbafaefe92ef792869b461f589289d63c8220a25debi0",
+            "122addae3261689cb2aeea4cb1e991a26396e1b54023a7bfd98ead37c7d6f16fi0",
+            "122addae3261689cb2aeea4cb1e991a26396e1b54023a7bfd98ead37c7d6f16fi1",
+            "77f4149e8b5e63673b12bf709cadb488521972beb410ebd2a72befc3ef2ff37bi0"
+        ];
+        
+        // Language texts for verification messages
+        const verificationTexts = {
+            PT: {
+                noPassFound: "Verificação completa: Nenhum Multiverso Pass encontrado para este endereço.",
+                verifyManually: "Você pode verificar manualmente em:",
+                contactSupport: "Se você acredita que possui um Multiverso Pass, por favor entre em contato com o suporte.",
+                technicalError: "Ocorreu um erro técnico ao verificar a posse do Multiverso Pass.",
+                errorDetails: "Detalhes do erro:",
+                youCan: "Você pode:",
+                checkManually: "1. Verificar manualmente em",
+                refreshPage: "2. Atualizar a página e tentar novamente",
+                contactSupportIfOwner: "3. Contatar o suporte caso possua um Multiverso Pass",
+                accessVerified: "Acesso Verificado",
+                passVerified: "Multiverso Pass verificado! Você tem acesso exclusivo.",
+                accessGranted: "Multiverso Pass verificado! Acesso concedido."
+            },
+            EN: {
+                noPassFound: "Verification complete: No Multiverso Pass found for this address.",
+                verifyManually: "You can verify manually at:",
+                contactSupport: "If you believe you own a Multiverso Pass, please contact support.",
+                technicalError: "A technical error occurred while verifying Multiverso Pass ownership.",
+                errorDetails: "Error details:",
+                youCan: "You can:",
+                checkManually: "1. Check manually at",
+                refreshPage: "2. Refresh the page and try again",
+                contactSupportIfOwner: "3. Contact support if you own a Multiverso Pass",
+                accessVerified: "Access Verified",
+                passVerified: "Multiverso Pass verified! You have exclusive access.",
+                accessGranted: "Multiverso Pass verified! Access granted."
+            }
+        };
+
+        // Function to get current language
+        function getCurrentLanguage() {
+            return window.currentLanguage || 'PT';
+        }
+        
+        // Inicializar LaserEyes quando disponível
+        function inicializarLaserEyes() {
+            if (typeof LaserEyes !== 'undefined') {
+                console.log('LaserEyes detectado! Inicializando...');
+                
+                // Configurar LaserEyes para mainnet
+                window.laserEyes = LaserEyes.createClient({
+                    network: 'mainnet'
+                });
+                
+                console.log('LaserEyes inicializado com sucesso!');
+                return true;
+            }
+            return false;
+        }
+        
+        // Funções globais para manipulação de carteiras
+        function toggleWalletMenu() {
+            console.log('Alternando menu de carteiras');
+            const menu = document.getElementById('wallet-menu');
+            menu.classList.toggle('active');
+        }
+        
+        async function conectarUnisat() {
+            console.log('Tentando conectar Unisat...');
+            
+            // Tentar usar LaserEyes primeiro se disponível
+            if (window.laserEyes) {
+                try {
+                    console.log('Conectando Unisat via LaserEyes...');
+                    await window.laserEyes.connect('unisat');
+                    
+                    const address = await window.laserEyes.getAddress();
+                    console.log('Endereço obtido via LaserEyes:', address);
+                    
+                    window.walletAddresses = [{ address, type: 'unisat' }];
+                    window.walletConnected = true;
+                    atualizarUI('Carteira Conectada');
+                    mostrarSucesso('Carteira Unisat conectada via LaserEyes!');
+                    
+                    // Verificar se possui algum dos Ordinals na lista
+                    verificarPosseOrdinals(address);
+                    return;
+                } catch (error) {
+                    console.error('Erro ao conectar via LaserEyes:', error);
+                    console.log('Tentando método tradicional...');
+                }
+            }
+            
+            // Método tradicional como fallback
+            if (typeof window.unisat === 'undefined') {
+                mostrarErro('Por favor, instale a extensão Unisat');
+                window.open('https://unisat.io/download', '_blank');
+                return;
+            }
+            
+            try {
+                // Solicitar acesso à carteira
+                console.log('Solicitando acesso às contas Unisat...');
+                const accounts = await window.unisat.requestAccounts();
+                console.log('Contas Unisat:', accounts);
+                
+                if (accounts && accounts.length > 0) {
+                    const address = accounts[0];
+                    window.walletAddresses = [{ address, type: 'unisat' }];
+                    window.walletConnected = true;
+                    atualizarUI('Carteira Conectada');
+                    mostrarSucesso('Carteira Unisat conectada!');
+                    
+                    // Solicitar assinatura para comprovar propriedade
+                    try {
+                        const mensagem = "Verificação de propriedade do Multiverso";
+                        const assinatura = await window.unisat.signMessage(mensagem);
+                        console.log('Assinatura Unisat:', assinatura);
+                        window.walletSignature = assinatura;
+                        mostrarSucesso('Assinatura verificada com sucesso!');
+                        
+                        // Verificar se possui algum dos Ordinals na lista
+                        verificarPosseOrdinals(address);
+                    } catch (signError) {
+                        console.error('Erro ao assinar mensagem:', signError);
+                        mostrarErro('Não foi possível verificar a propriedade: ' + signError.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao conectar Unisat:', error);
+                mostrarErro('Erro ao conectar Unisat: ' + error.message);
+            }
+        }
+        
+        // Função para verificar se o endereço possui algum dos Ordinals válidos
+        async function verificarPosseOrdinals(address) {
+            try {
+                mostrarStatus('Verificando Ordinals...', 'status-pending');
+                
+                // Mostrar overlay de carregamento
+                document.getElementById('access-overlay').style.display = 'flex';
+                document.getElementById('loading-spinner').style.display = 'block';
+                document.getElementById('verify-btn').style.display = 'none';
+                document.getElementById('access-message').textContent = 'Verificando posse do Multiverso Pass...';
+                
+                console.log('Verificando Ordinals para o endereço:', address);
+                
+                // Remover qualquer botão de acesso temporário que possa existir
+                const tempButton = document.querySelector('button[textContent="Conceder Acesso Temporário"]');
+                if (tempButton) {
+                    tempButton.parentNode.removeChild(tempButton);
+                }
+                
+                // Método 1: API Unisat
+                let ordinalsValidos = [];
+                let verificacaoBemSucedida = false;
+                
+                try {
+                    console.log('Tentando API Unisat...');
+                    const resposta = await fetch(`https://open-api.unisat.io/v1/address/${address}/inscriptions?start=0&limit=100`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (resposta.ok) {
+                        const dados = await resposta.json();
+                        console.log('Ordinals encontrados via API Unisat:', dados);
+                        
+                        if (dados && dados.success && dados.data && dados.data.inscriptions) {
+                            const ordinals = dados.data.inscriptions;
+                            
+                            ordinalsValidos = ordinals.filter(ordinal => 
+                                multiversoPassIds.includes(ordinal.id)
+                            );
+                            
+                            if (ordinalsValidos.length > 0) {
+                                console.log('Ordinals válidos encontrados via API Unisat:', ordinalsValidos);
+                                verificacaoBemSucedida = true;
+                            }
+                        }
+                    } else {
+                        console.warn('API Unisat falhou com status:', resposta.status);
+                    }
+                } catch (err) {
+                    console.warn('Erro ao usar API Unisat:', err);
+                }
+                
+                // Método 2: API Hiro (Ordinals Explorer)
+                if (!verificacaoBemSucedida) {
+                    try {
+                        console.log('Tentando API Hiro...');
+                        const resposta = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions?address=${address}&limit=60`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        if (resposta.ok) {
+                            const dados = await resposta.json();
+                            console.log('Ordinals encontrados via API Hiro:', dados);
+                            
+                            if (dados && dados.results) {
+                                const ordinals = dados.results;
+                                
+                                const hiroValidos = ordinals.filter(ordinal => 
+                                    multiversoPassIds.includes(ordinal.id)
+                                );
+                                
+                                if (hiroValidos.length > 0) {
+                                    console.log('Ordinals válidos encontrados via API Hiro:', hiroValidos);
+                                    ordinalsValidos = hiroValidos;
+                                    verificacaoBemSucedida = true;
+                                }
+                            }
+                        } else {
+                            console.warn('API Hiro falhou com status:', resposta.status);
+                        }
+                    } catch (err) {
+                        console.warn('Erro ao usar API Hiro:', err);
+                    }
+                }
+                
+                // Método 3: Extensão Unisat
+                if (!verificacaoBemSucedida && typeof window.unisat !== 'undefined') {
+                    try {
+                        console.log('Tentando método via extensão Unisat...');
+                        
+                        if (typeof window.unisat.getInscriptions === 'function') {
+                            const inscriptions = await window.unisat.getInscriptions();
+                            console.log('Inscriptions obtidas via extensão Unisat:', inscriptions);
+                            
+                            const extensionValidos = inscriptions.filter(ordinal => 
+                                multiversoPassIds.includes(ordinal.inscriptionId)
+                            );
+                            
+                            if (extensionValidos.length > 0) {
+                                console.log('Ordinals válidos encontrados via extensão:', extensionValidos);
+                                ordinalsValidos = extensionValidos.map(o => ({id: o.inscriptionId, output: o.output}));
+                                verificacaoBemSucedida = true;
+                            }
+                        } else {
+                            console.warn('unisat.getInscriptions não está disponível');
+                        }
+                    } catch (err) {
+                        console.warn('Erro ao usar extensão Unisat:', err);
+                    }
+                }
+                
+                // Método 4: API OrdinalHub
+                if (!verificacaoBemSucedida) {
+                    try {
+                        console.log('Tentando API OrdinalHub...');
+                        const resposta = await fetch(`https://ordinalhub.com/api/collection-holdings?address=${address}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        if (resposta.ok) {
+                            const dados = await resposta.json();
+                            console.log('Dados obtidos via OrdinalHub:', dados);
+                            
+                            // Verificar se há algum Ordinal válido nos dados retornados
+                            // A estrutura exata depende da API, então isso pode precisar de ajustes
+                            if (dados && dados.inscriptions) {
+                                const hubValidos = dados.inscriptions.filter(ordinal => 
+                                    multiversoPassIds.includes(ordinal.id)
+                                );
+                                
+                                if (hubValidos.length > 0) {
+                                    console.log('Ordinals válidos encontrados via OrdinalHub:', hubValidos);
+                                    ordinalsValidos = hubValidos;
+                                    verificacaoBemSucedida = true;
+                                }
+                            }
+                        } else {
+                            console.warn('API OrdinalHub falhou com status:', resposta.status);
+                        }
+                    } catch (err) {
+                        console.warn('Erro ao usar API OrdinalHub:', err);
+                    }
+                }
+                
+                // Verificar resultado final
+                if (verificacaoBemSucedida && ordinalsValidos.length > 0) {
+                    concederAcesso(ordinalsValidos, address);
+                } else {
+                    // Verificação final falhou, negar acesso
+                    negarAcesso(address);
+                    
+                    // Get current language
+                    const lang = getCurrentLanguage();
+                    const texts = verificationTexts[lang];
+                    
+                    // Mostrar mensagem de erro mais detalhada
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('verify-btn').style.display = 'block';
+                    document.getElementById('access-message').innerHTML = 
+                        `${texts.noPassFound}<br><br>` +
+                        `${texts.verifyManually}<br>` +
+                        `<a href="https://unisat.io/address/${address}" target="_blank" style="color:#ff6600;">https://unisat.io/address/${address}</a><br><br>` +
+                        `${texts.contactSupport}`;
+                }
+                
+            } catch (error) {
+                console.error('Erro ao verificar Ordinals:', error);
+                mostrarErro('Erro ao verificar Ordinals: ' + error.message);
+                
+                // Get current language
+                const lang = getCurrentLanguage();
+                const texts = verificationTexts[lang];
+                
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('verify-btn').style.display = 'block';
+                document.getElementById('access-message').innerHTML = 
+                    `${texts.technicalError}<br><br>` +
+                    `${texts.errorDetails} ${error.message}<br><br>` +
+                    `${texts.youCan}<br>` +
+                    `${texts.checkManually} <a href="https://unisat.io/address/${address}" target="_blank" style="color:#ff6600;">unisat.io</a><br>` +
+                    `${texts.refreshPage}<br>` +
+                    `${texts.contactSupportIfOwner}`;
+            }
+        }
+        
+        // Função para conceder acesso quando Ordinals válidos são encontrados
+        function concederAcesso(ordinalsValidos, address) {
+            console.log('Acesso concedido para o endereço:', address);
+            window.hasAccess = true;
+            window.hasMultiversoPass = true;
+            
+            // Get current language
+            const lang = getCurrentLanguage();
+            const texts = verificationTexts[lang];
+            
+            // Atualizar UI
+            document.getElementById('loading-spinner').style.display = 'none';
+            document.getElementById('access-message').textContent = texts.passVerified;
+            document.getElementById('access-overlay').style.display = 'flex';
+            
+            // Mostrar status de acesso
+            mostrarStatus(texts.accessVerified, 'status-verified');
+            
+            // Fechar overlay após 3 segundos
+            setTimeout(() => {
+                document.getElementById('access-overlay').style.display = 'none';
+            }, 3000);
+            
+            // Evento personalizado para notificar o ambiente 3D
+            document.dispatchEvent(new CustomEvent('accessGranted', {
+                detail: {
+                    address: address,
+                    ordinals: ordinalsValidos
+                }
+            }));
+            
+            mostrarSucesso(texts.accessGranted, '#4CAF50');
+        }
+        
+        // Função para negar acesso quando nenhum Ordinal válido é encontrado
+        function negarAcesso(address) {
+            console.log('Acesso negado para o endereço:', address);
+            window.hasAccess = false;
+            window.hasMultiversoPass = false;
+            
+            // Atualizar UI
+            document.getElementById('loading-spinner').style.display = 'none';
+            document.getElementById('access-message').textContent = 'Nenhum Multiverso Pass encontrado neste endereço. Você precisa de pelo menos um para ter acesso exclusivo.';
+            document.getElementById('access-overlay').style.display = 'flex';
+            
+            // Mostrar status de acesso
+            mostrarStatus('Acesso Negado', 'status-denied');
+            
+            // Evento personalizado para notificar o ambiente 3D
+            document.dispatchEvent(new CustomEvent('accessDenied', {
+                detail: {
+                    address: address
+                }
+            }));
+            
+            mostrarErro('Nenhum Multiverso Pass encontrado. Acesso negado.');
+        }
+        
+        // Função para mostrar status de acesso
+        function mostrarStatus(mensagem, classe) {
+            const status = document.getElementById('access-status');
+            status.textContent = mensagem;
+            status.className = '';
+            status.classList.add(classe);
+            status.style.display = 'block';
+        }
+        
+        // Function to update all UI elements based on current language
+        function updateUILanguage() {
+            const lang = getCurrentLanguage();
+            
+            // Update disconnect button
+            const disconnectBtn = document.getElementById('disconnect-btn');
+            if (disconnectBtn) {
+                disconnectBtn.textContent = disconnectBtn.getAttribute(`data-${lang.toLowerCase()}`);
+            }
+            
+            // Update access overlay title
+            const accessTitle = document.getElementById('access-title');
+            if (accessTitle) {
+                accessTitle.textContent = accessTitle.getAttribute(`data-${lang.toLowerCase()}`);
+            }
+            
+            // Update verify button
+            const verifyBtn = document.getElementById('verify-btn');
+            if (verifyBtn) {
+                verifyBtn.textContent = verifyBtn.getAttribute(`data-${lang.toLowerCase()}`);
+            }
+            
+            // Update close overlay button
+            const closeOverlayBtn = document.getElementById('close-overlay-btn');
+            if (closeOverlayBtn) {
+                closeOverlayBtn.textContent = closeOverlayBtn.getAttribute(`data-${lang.toLowerCase()}`);
+            }
+            
+            // Update connect button
+            const connectBtn = document.getElementById('connect-btn');
+            if (connectBtn) {
+                if (window.walletConnected) {
+                    connectBtn.textContent = lang === 'PT' ? 'Carteira Conectada' : 'Wallet Connected';
+                } else {
+                    connectBtn.textContent = lang === 'PT' ? 'Conectar Carteira' : 'Connect Wallet';
+                }
+            }
+        }
+        
+        // Listen for language changes
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial language update
+            updateUILanguage();
+            
+            // Listen for language changes
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'data-current-language') {
+                        updateUILanguage();
+                    }
+                });
+            });
+            
+            // Observe the document body for the data-current-language attribute
+            observer.observe(document.body, { attributes: true });
+        });
+        
+        // Verificar se o navegador está em modo privado/incógnito
+        async function isIncognito() {
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                const { quota } = await navigator.storage.estimate();
+                return quota < 120000000;
+            }
+            return false;
+        }
+
+        function desconectarCarteira() {
+            console.log('Desconectando carteira...');
+            
+            // Desconectar via LaserEyes se disponível
+            if (window.laserEyes) {
+                try {
+                    window.laserEyes.disconnect();
+                    console.log('Desconectado via LaserEyes');
+                } catch (error) {
+                    console.error('Erro ao desconectar via LaserEyes:', error);
+                }
+            }
+            
+            window.walletAddresses = null;
+            window.walletSignature = null;
+            window.walletConnected = false;
+            
+            // Revogar acesso ao desconectar
+            window.hasAccess = false;
+            window.hasMultiversoPass = false;
+            
+            // Disparar evento de acesso negado para atualizar o ambiente 3D
+            document.dispatchEvent(new CustomEvent('accessDenied', {
+                detail: {
+                    reason: 'wallet_disconnected'
+                }
+            }));
+            
+            atualizarUI('Conectar Carteira');
+            mostrarSucesso('Carteira desconectada. Acesso revogado.', 'orange');
+            
+            // Mostrar status de acesso
+            mostrarStatus('Acesso Revogado', 'status-denied');
+        }
+        
+        // Funções auxiliares
+        function atualizarUI(texto) {
+            document.getElementById('connect-btn').textContent = texto;
+            document.getElementById('wallet-menu').classList.remove('active');
+        }
+        
+        function mostrarErro(mensagem) {
+            const erro = document.getElementById('error');
+            erro.textContent = mensagem;
+            erro.style.display = 'block';
+            erro.style.color = '#ff0000';
+            setTimeout(() => erro.style.display = 'none', 5000);
+        }
+        
+        function mostrarSucesso(mensagem, cor = '#4CAF50') {
+            const erro = document.getElementById('error');
+            erro.textContent = mensagem;
+            erro.style.display = 'block';
+            erro.style.color = cor;
+            setTimeout(() => erro.style.display = 'none', 3000);
+        }
+        
+        // Fechar menu ao clicar fora
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('wallet-menu');
+            const btn = document.getElementById('connect-btn');
+            if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+        
+        // Função para verificar o status das extensões
+        function verificarExtensoes() {
+            console.log('===== STATUS DAS EXTENSÕES =====');
+            console.log('Unisat disponível:', typeof window.unisat !== 'undefined' ? '✓' : '✗');
+            
+            // Verificar LaserEyes
+            if (typeof LaserEyes !== 'undefined') {
+                console.log('✓ LaserEyes detectado! Verificando suporte a carteiras:');
+                try {
+                    if (window.laserEyes) {
+                        window.laserEyes.getProviders().then(providers => {
+                            console.log('Provedores disponíveis via LaserEyes:', providers);
+                        }).catch(err => {
+                            console.error('Erro ao obter provedores:', err);
+                        });
+                    }
+                } catch (e) {
+                    console.log('Erro ao verificar provedores LaserEyes:', e);
+                }
+            }
+            
+            return {
+                unisat: typeof window.unisat !== 'undefined',
+                laserEyes: typeof LaserEyes !== 'undefined'
+            };
+        }
+        
+        // Inicializar listeners quando a página carregar
+        window.addEventListener('load', function() {
+            console.log('Página carregada, inicializando listeners...');
+            
+            // Tentar inicializar LaserEyes
+            if (!inicializarLaserEyes()) {
+                // Se não estiver disponível, tentar carregar
+                console.log('LaserEyes não detectado, tentando carregar...');
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@omnisat/lasereyes@latest/dist/index.umd.js';
+                script.onload = function() {
+                    console.log('LaserEyes carregado com sucesso!');
+                    inicializarLaserEyes();
+                };
+                script.onerror = function() {
+                    console.error('Erro ao carregar LaserEyes');
+                };
+                document.head.appendChild(script);
+            }
+            
+            // Adicionar event listeners para os botões
+            document.getElementById('connect-btn').addEventListener('click', toggleWalletMenu);
+            document.getElementById('unisat-btn').addEventListener('click', conectarUnisat);
+            document.getElementById('disconnect-btn').addEventListener('click', desconectarCarteira);
+            document.getElementById('close-overlay-btn').addEventListener('click', function() {
+                document.getElementById('access-overlay').style.display = 'none';
+            });
+            document.getElementById('verify-btn').addEventListener('click', function() {
+                if (window.walletAddresses && window.walletAddresses.length > 0) {
+                    verificarPosseOrdinals(window.walletAddresses[0].address);
+                } else {
+                    mostrarErro('Conecte sua carteira primeiro');
+                }
+            });
+            
+            // Verificar disponibilidade das extensões imediatamente
+            verificarExtensoes();
+        });
+    </script>
 </body>
 </html> 
