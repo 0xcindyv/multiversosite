@@ -8,6 +8,7 @@
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
     <base href="./">
     <title>Multiverso - Versão Atualizada 2023</title>
     <style>
@@ -262,6 +263,96 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Estilos para alertas de segurança */
+        #security-alert {
+            position: fixed;
+            bottom: 70px;
+            left: 20px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-left: 4px solid #FFC107;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            line-height: 1.5;
+        }
+
+        #security-alert h4 {
+            color: #FFC107;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        #security-alert p {
+            margin: 5px 0;
+        }
+
+        #security-alert button {
+            background-color: #FFC107;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #security-alert button:hover {
+            background-color: #e0aa00;
+        }
+
+        /* Estilo para o indicador de inatividade */
+        #inactivity-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 2000;
+            display: none;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #inactivity-warning h3 {
+            color: #FFC107;
+            margin-top: 0;
+        }
+
+        #inactivity-warning p {
+            margin: 10px 0;
+        }
+
+        #inactivity-warning .countdown {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFC107;
+            margin: 15px 0;
+        }
+
+        #inactivity-warning button {
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #inactivity-warning button:hover {
+            background-color: #ff8533;
+        }
     </style>
     
     <!-- Importmap para Three.js -->
@@ -345,6 +436,25 @@
             <button id="verify-btn" class="verify-btn" style="display: none;" data-pt="Verificar Acesso" data-en="Verify Access">Verificar Acesso</button>
             <button id="close-overlay-btn" class="verify-btn" style="background-color: #333; margin-top: 10px;" data-pt="Voltar" data-en="Back">Voltar</button>
         </div>
+        
+        <!-- Alerta de segurança -->
+        <div id="security-alert">
+            <h4>⚠️ Alerta de Segurança</h4>
+            <p>Nunca compartilhe suas chaves privadas ou frases de recuperação com ninguém.</p>
+            <p>Verifique sempre se está no site oficial: <strong>0xcindyv.github.io/multiversosite</strong></p>
+            <p>O Multiverso nunca solicitará suas chaves privadas.</p>
+            <button id="close-security-alert">Entendi</button>
+        </div>
+        
+        <!-- Aviso de inatividade -->
+        <div id="inactivity-warning">
+            <h3>Aviso de Inatividade</h3>
+            <p>Sua sessão será encerrada em breve por inatividade.</p>
+            <div class="countdown">60</div>
+            <p>Deseja continuar conectado?</p>
+            <button id="stay-connected-btn">Continuar Conectado</button>
+            <button id="disconnect-now-btn">Desconectar Agora</button>
+        </div>
     </div>
     
     <!-- Script para conexão de carteiras -->
@@ -364,6 +474,64 @@
                 lastReset: Date.now(),
                 maxAttempts: 5,
                 resetInterval: 60000 // 1 minuto
+            };
+            
+            // Novo: Monitoramento de atividades suspeitas
+            const securityMonitor = {
+                suspiciousActivities: [],
+                addressVerificationAttempts: {},
+                maxVerificationAttempts: 3,
+                
+                // Registrar tentativa de verificação
+                logVerificationAttempt: function(address) {
+                    if (!address) return;
+                    
+                    // Inicializar contador se não existir
+                    if (!this.addressVerificationAttempts[address]) {
+                        this.addressVerificationAttempts[address] = {
+                            count: 0,
+                            firstAttempt: Date.now()
+                        };
+                    }
+                    
+                    // Incrementar contador
+                    this.addressVerificationAttempts[address].count++;
+                    this.addressVerificationAttempts[address].lastAttempt = Date.now();
+                    
+                    // Verificar se excedeu o limite
+                    if (this.addressVerificationAttempts[address].count > this.maxVerificationAttempts) {
+                        const timeSpan = (Date.now() - this.addressVerificationAttempts[address].firstAttempt) / 1000;
+                        
+                        // Se muitas tentativas em um curto período, registrar como suspeito
+                        if (timeSpan < 300) { // 5 minutos
+                            this.logSuspiciousActivity({
+                                type: 'excessive_verification',
+                                address: address,
+                                attempts: this.addressVerificationAttempts[address].count,
+                                timeSpan: timeSpan,
+                                timestamp: Date.now()
+                            });
+                            
+                            console.warn(`Atividade suspeita: Múltiplas tentativas de verificação para o endereço ${address}`);
+                        }
+                    }
+                },
+                
+                // Registrar atividade suspeita
+                logSuspiciousActivity: function(activity) {
+                    this.suspiciousActivities.push(activity);
+                    
+                    // Limitar o tamanho do log para evitar consumo excessivo de memória
+                    if (this.suspiciousActivities.length > 100) {
+                        this.suspiciousActivities.shift();
+                    }
+                    
+                    // Enviar para console para debugging
+                    console.warn('Atividade suspeita detectada:', activity);
+                    
+                    // Aqui você poderia implementar um envio para um servidor de logs
+                    // ou mostrar um alerta para o usuário, dependendo da gravidade
+                }
             };
             
             // Função para gerar nonce aleatório
@@ -412,6 +580,14 @@
                     // Verificar se excedeu o limite
                     if (connectionAttempts.count >= connectionAttempts.maxAttempts) {
                         const waitTime = Math.ceil((connectionAttempts.resetInterval - (now - connectionAttempts.lastReset)) / 1000);
+                        
+                        // Registrar atividade suspeita se muitas tentativas
+                        securityMonitor.logSuspiciousActivity({
+                            type: 'rate_limit_exceeded',
+                            attempts: connectionAttempts.count,
+                            timestamp: now
+                        });
+                        
                         return {
                             allowed: false,
                             waitTime: waitTime
@@ -452,6 +628,12 @@
                             atualizarUI('Carteira Conectada');
                             mostrarSucesso('Carteira Unisat conectada via LaserEyes!');
                             
+                            // Iniciar monitoramento de inatividade
+                            iniciarMonitoramentoInatividade();
+                            
+                            // Mostrar alerta de segurança
+                            mostrarAlertaSeguranca();
+                            
                             // Verificar se possui algum dos Ordinals na lista
                             this.verifyOrdinals(address);
                             return true;
@@ -485,6 +667,12 @@
                             walletConnected = true;
                             atualizarUI('Carteira Conectada');
                             mostrarSucesso('Carteira Unisat conectada!');
+                            
+                            // Iniciar monitoramento de inatividade
+                            iniciarMonitoramentoInatividade();
+                            
+                            // Mostrar alerta de segurança
+                            mostrarAlertaSeguranca();
                             
                             // Solicitar assinatura para comprovar propriedade
                             try {
@@ -550,6 +738,9 @@
                     // Resetar nonce
                     this.resetNonce();
                     
+                    // Parar monitoramento de inatividade
+                    pararMonitoramentoInatividade();
+                    
                     atualizarUI('Conectar Carteira');
                     mostrarSucesso('Carteira desconectada. Acesso revogado.', 'orange');
                     
@@ -582,6 +773,9 @@
                 verifyOrdinals: async function(address) {
                     try {
                         mostrarStatus('Verificando Ordinals...', 'status-pending');
+                        
+                        // Registrar tentativa de verificação para monitoramento
+                        securityMonitor.logVerificationAttempt(address);
                         
                         // Fechar o overlay imediatamente - não queremos mostrar a janela grande
                         document.getElementById('access-overlay').style.display = 'none';
@@ -842,6 +1036,14 @@
                     
                     // Mostrar apenas o status no canto inferior esquerdo
                     mostrarStatus('Acesso Negado', 'status-denied');
+                },
+                
+                // Novo: Obter dados de monitoramento de segurança
+                getSecurityMonitorData: function() {
+                    return {
+                        suspiciousActivities: securityMonitor.suspiciousActivities,
+                        addressVerificationAttempts: securityMonitor.addressVerificationAttempts
+                    };
                 }
             };
         })();
@@ -1172,6 +1374,135 @@
             });
         }
         
+        // Novo: Sistema de timeout por inatividade
+        let inactivityTimer = null;
+        let countdownTimer = null;
+        let countdownValue = 60;
+        const inactivityTimeout = 15 * 60 * 1000; // 15 minutos
+        
+        // Iniciar monitoramento de inatividade
+        function iniciarMonitoramentoInatividade() {
+            // Limpar timers existentes
+            pararMonitoramentoInatividade();
+            
+            // Iniciar novo timer
+            inactivityTimer = setTimeout(mostrarAvisoInatividade, inactivityTimeout);
+            
+            // Adicionar listeners para resetar o timer em caso de atividade
+            document.addEventListener('mousemove', resetarTimerInatividade);
+            document.addEventListener('keypress', resetarTimerInatividade);
+            document.addEventListener('click', resetarTimerInatividade);
+            document.addEventListener('scroll', resetarTimerInatividade);
+        }
+        
+        // Parar monitoramento de inatividade
+        function pararMonitoramentoInatividade() {
+            // Limpar timers
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = null;
+            }
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            
+            // Remover listeners
+            document.removeEventListener('mousemove', resetarTimerInatividade);
+            document.removeEventListener('keypress', resetarTimerInatividade);
+            document.removeEventListener('click', resetarTimerInatividade);
+            document.removeEventListener('scroll', resetarTimerInatividade);
+            
+            // Esconder aviso se estiver visível
+            document.getElementById('inactivity-warning').style.display = 'none';
+        }
+        
+        // Resetar timer de inatividade
+        function resetarTimerInatividade() {
+            // Só resetar se não estiver no modo de contagem regressiva
+            if (!countdownTimer) {
+                if (inactivityTimer) {
+                    clearTimeout(inactivityTimer);
+                }
+                inactivityTimer = setTimeout(mostrarAvisoInatividade, inactivityTimeout);
+            }
+        }
+        
+        // Mostrar aviso de inatividade
+        function mostrarAvisoInatividade() {
+            // Resetar contagem
+            countdownValue = 60;
+            
+            // Atualizar e mostrar aviso
+            document.querySelector('#inactivity-warning .countdown').textContent = countdownValue;
+            document.getElementById('inactivity-warning').style.display = 'block';
+            
+            // Iniciar contagem regressiva
+            countdownTimer = setInterval(function() {
+                countdownValue--;
+                document.querySelector('#inactivity-warning .countdown').textContent = countdownValue;
+                
+                if (countdownValue <= 0) {
+                    // Tempo esgotado, desconectar
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                    document.getElementById('inactivity-warning').style.display = 'none';
+                    
+                    // Desconectar carteira
+                    WalletManager.disconnect();
+                }
+            }, 1000);
+        }
+        
+        // Continuar conectado (resetar timer)
+        function continuarConectado() {
+            // Limpar contagem regressiva
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            
+            // Esconder aviso
+            document.getElementById('inactivity-warning').style.display = 'none';
+            
+            // Reiniciar monitoramento
+            iniciarMonitoramentoInatividade();
+        }
+        
+        // Mostrar alerta de segurança
+        function mostrarAlertaSeguranca() {
+            document.getElementById('security-alert').style.display = 'block';
+            
+            // Auto-esconder após 15 segundos
+            setTimeout(function() {
+                document.getElementById('security-alert').style.display = 'none';
+            }, 15000);
+        }
+        
+        // Novo: Verificar atualizações de bibliotecas
+        function verificarAtualizacoesBibliotecas() {
+            console.log('Verificando atualizações de bibliotecas...');
+            
+            // Verificar versão do LaserEyes
+            if (typeof LaserEyes !== 'undefined' && typeof LaserEyes.version === 'string') {
+                const versaoAtual = LaserEyes.version;
+                
+                // Aqui você poderia implementar uma chamada para um endpoint que retorna a versão mais recente
+                // Por enquanto, apenas logamos a versão atual
+                console.log('Versão atual do LaserEyes:', versaoAtual);
+            }
+            
+            // Verificar versão do SatsConnect
+            if (typeof window.SatsConnect !== 'undefined' && typeof window.SatsConnect.version === 'string') {
+                const versaoAtual = window.SatsConnect.version;
+                console.log('Versão atual do SatsConnect:', versaoAtual);
+            }
+            
+            // Programar próxima verificação (a cada 24 horas)
+            setTimeout(verificarAtualizacoesBibliotecas, 24 * 60 * 60 * 1000);
+        }
+        
         // Inicializar listeners quando a página carregar
         window.addEventListener('load', function() {
             console.log('Página carregada, inicializando listeners...');
@@ -1205,8 +1536,25 @@
                 }
             });
             
+            // Novos listeners para os alertas de segurança e inatividade
+            document.getElementById('close-security-alert').addEventListener('click', function() {
+                document.getElementById('security-alert').style.display = 'none';
+            });
+            
+            document.getElementById('stay-connected-btn').addEventListener('click', continuarConectado);
+            document.getElementById('disconnect-now-btn').addEventListener('click', function() {
+                document.getElementById('inactivity-warning').style.display = 'none';
+                WalletManager.disconnect();
+            });
+            
             // Verificar disponibilidade das extensões imediatamente
             verificarExtensoes();
+            
+            // Verificar atualizações de bibliotecas
+            verificarAtualizacoesBibliotecas();
+            
+            // Mostrar alerta de segurança inicial
+            setTimeout(mostrarAlertaSeguranca, 2000);
         });
         
         /**
