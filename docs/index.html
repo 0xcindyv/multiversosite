@@ -439,11 +439,11 @@
         
         <!-- Alerta de segurança -->
         <div id="security-alert">
-            <h4>⚠️ Alerta de Segurança</h4>
-            <p>Nunca compartilhe suas chaves privadas ou frases de recuperação com ninguém.</p>
-            <p>Verifique sempre se está no site oficial: <strong>0xcindyv.github.io/multiversosite</strong></p>
-            <p>O Multiverso nunca solicitará suas chaves privadas.</p>
-            <button id="close-security-alert">Entendi</button>
+            <h4 data-pt="⚠️ Alerta de Segurança" data-en="⚠️ Security Alert">⚠️ Alerta de Segurança</h4>
+            <p data-pt="Nunca compartilhe suas chaves privadas ou frases de recuperação com ninguém." data-en="Never share your private keys or recovery phrases with anyone.">Nunca compartilhe suas chaves privadas ou frases de recuperação com ninguém.</p>
+            <p data-pt="Verifique sempre se está no site oficial: <strong>0xcindyv.github.io/multiversosite</strong>" data-en="Always verify you are on the official website: <strong>0xcindyv.github.io/multiversosite</strong>">Verifique sempre se está no site oficial: <strong>0xcindyv.github.io/multiversosite</strong></p>
+            <p data-pt="O Multiverso nunca solicitará suas chaves privadas." data-en="Multiverso will never ask for your private keys.">O Multiverso nunca solicitará suas chaves privadas.</p>
+            <button id="close-security-alert" data-pt="Entendi" data-en="I Understand">Entendi</button>
         </div>
         
         <!-- Aviso de inatividade -->
@@ -1246,6 +1246,25 @@
                     connectBtn.textContent = lang === 'PT' ? 'Conectar Carteira' : 'Connect Wallet';
                 }
             }
+            
+            // Update security alert
+            const alertTitle = document.querySelector('#security-alert h4');
+            const alertParagraphs = document.querySelectorAll('#security-alert p');
+            const alertButton = document.querySelector('#security-alert button');
+            
+            if (alertTitle) {
+                alertTitle.textContent = alertTitle.getAttribute(`data-${lang.toLowerCase()}`);
+            }
+            
+            if (alertParagraphs) {
+                alertParagraphs.forEach(p => {
+                    p.innerHTML = p.getAttribute(`data-${lang.toLowerCase()}`);
+                });
+            }
+            
+            if (alertButton) {
+                alertButton.textContent = alertButton.getAttribute(`data-${lang.toLowerCase()}`);
+            }
         }
         
         // Listen for language changes
@@ -1472,6 +1491,24 @@
         
         // Mostrar alerta de segurança
         function mostrarAlertaSeguranca() {
+            // Atualizar texto do alerta para o idioma atual
+            const lang = getCurrentLanguage();
+            const alertTitle = document.querySelector('#security-alert h4');
+            const alertParagraphs = document.querySelectorAll('#security-alert p');
+            const alertButton = document.querySelector('#security-alert button');
+            
+            // Atualizar título
+            alertTitle.textContent = alertTitle.getAttribute(`data-${lang.toLowerCase()}`);
+            
+            // Atualizar parágrafos
+            alertParagraphs.forEach(p => {
+                p.innerHTML = p.getAttribute(`data-${lang.toLowerCase()}`);
+            });
+            
+            // Atualizar botão
+            alertButton.textContent = alertButton.getAttribute(`data-${lang.toLowerCase()}`);
+            
+            // Mostrar alerta
             document.getElementById('security-alert').style.display = 'block';
             
             // Auto-esconder após 15 segundos
