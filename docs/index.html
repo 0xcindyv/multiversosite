@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://open-api.unisat.io https://api.hiro.so https://ordinalhub.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' https://*.bitmap.stream;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://open-api.unisat.io https://api.hiro.so https://ordinalhub.com https://*.unisat.io https://*.hiro.so https://*.ordinalhub.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' https://*.bitmap.stream;">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
@@ -624,6 +624,126 @@
                         
                         // Continuar com os outros métodos se o primeiro falhar...
                         // (Código para os outros métodos permanece similar, com validações adicionais)
+                        
+                        // Método 2: API Hiro (Ordinals Explorer)
+                        if (!verificacaoBemSucedida) {
+                            try {
+                                console.log('Tentando API Hiro...');
+                                const resposta = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions?address=${address}&limit=60`, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                
+                                if (resposta.ok) {
+                                    const dados = await resposta.json();
+                                    console.log('Ordinals encontrados via API Hiro:', dados);
+                                    
+                                    if (dados && 
+                                        typeof dados === 'object' && 
+                                        Array.isArray(dados.results)) {
+                                        
+                                        const ordinals = dados.results;
+                                        
+                                        // Validar cada ordinal antes de filtrar
+                                        const hiroValidos = ordinals.filter(ordinal => 
+                                            ordinal && 
+                                            typeof ordinal === 'object' && 
+                                            typeof ordinal.id === 'string' &&
+                                            multiversoPassIds.includes(ordinal.id)
+                                        );
+                                        
+                                        if (hiroValidos.length > 0) {
+                                            console.log('Ordinals válidos encontrados via API Hiro:', hiroValidos);
+                                            ordinalsValidos = hiroValidos;
+                                            verificacaoBemSucedida = true;
+                                        }
+                                    } else {
+                                        console.warn('Resposta da API Hiro em formato inválido:', dados);
+                                    }
+                                } else {
+                                    console.warn('API Hiro falhou com status:', resposta.status);
+                                }
+                            } catch (err) {
+                                console.warn('Erro ao usar API Hiro:', err);
+                            }
+                        }
+                        
+                        // Método 3: Extensão Unisat
+                        if (!verificacaoBemSucedida && typeof window.unisat !== 'undefined') {
+                            try {
+                                console.log('Tentando método via extensão Unisat...');
+                                
+                                if (typeof window.unisat.getInscriptions === 'function') {
+                                    const inscriptions = await window.unisat.getInscriptions();
+                                    console.log('Inscriptions obtidas via extensão Unisat:', inscriptions);
+                                    
+                                    if (Array.isArray(inscriptions)) {
+                                        const extensionValidos = inscriptions.filter(ordinal => 
+                                            ordinal && 
+                                            typeof ordinal === 'object' && 
+                                            typeof ordinal.inscriptionId === 'string' &&
+                                            multiversoPassIds.includes(ordinal.inscriptionId)
+                                        );
+                                        
+                                        if (extensionValidos.length > 0) {
+                                            console.log('Ordinals válidos encontrados via extensão:', extensionValidos);
+                                            ordinalsValidos = extensionValidos.map(o => ({id: o.inscriptionId, output: o.output}));
+                                            verificacaoBemSucedida = true;
+                                        }
+                                    }
+                                } else {
+                                    console.warn('unisat.getInscriptions não está disponível');
+                                }
+                            } catch (err) {
+                                console.warn('Erro ao usar extensão Unisat:', err);
+                            }
+                        }
+                        
+                        // Método 4: API OrdinalHub
+                        if (!verificacaoBemSucedida) {
+                            try {
+                                console.log('Tentando API OrdinalHub...');
+                                const resposta = await fetch(`https://ordinalhub.com/api/collection-holdings?address=${address}`, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                
+                                if (resposta.ok) {
+                                    const dados = await resposta.json();
+                                    console.log('Dados obtidos via OrdinalHub:', dados);
+                                    
+                                    if (dados && 
+                                        typeof dados === 'object' && 
+                                        Array.isArray(dados.inscriptions)) {
+                                        
+                                        const hubValidos = dados.inscriptions.filter(ordinal => 
+                                            ordinal && 
+                                            typeof ordinal === 'object' && 
+                                            typeof ordinal.id === 'string' &&
+                                            multiversoPassIds.includes(ordinal.id)
+                                        );
+                                        
+                                        if (hubValidos.length > 0) {
+                                            console.log('Ordinals válidos encontrados via OrdinalHub:', hubValidos);
+                                            ordinalsValidos = hubValidos;
+                                            verificacaoBemSucedida = true;
+                                        }
+                                    } else {
+                                        console.warn('Resposta da API OrdinalHub em formato inválido:', dados);
+                                    }
+                                } else {
+                                    console.warn('API OrdinalHub falhou com status:', resposta.status);
+                                }
+                            } catch (err) {
+                                console.warn('Erro ao usar API OrdinalHub:', err);
+                            }
+                        }
                         
                         // Verificar resultado final
                         if (verificacaoBemSucedida && ordinalsValidos.length > 0) {
