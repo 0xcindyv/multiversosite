@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiverso</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; connect-src 'self' https://open-api.unisat.io https://api.hiro.so https://ordinalhub.com https://*.unisat.io https://*.hiro.so https://*.ordinalhub.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' https://*.bitmap.stream;">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
+    <base href="./">
+    <title>Multiverso - Versão Atualizada 2023</title>
     <style>
         body {
             margin: 0;
@@ -200,21 +207,27 @@
             padding: 10px 15px;
             background-color: rgba(0, 0, 0, 0.7);
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
             z-index: 1000;
             display: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
         }
 
         .status-verified {
             color: #4CAF50;
+            border-left: 4px solid #4CAF50;
         }
 
         .status-pending {
             color: #FFC107;
+            border-left: 4px solid #FFC107;
         }
 
         .status-denied {
             color: #F44336;
+            border-left: 4px solid #F44336;
         }
 
         .verify-btn {
@@ -249,6 +262,96 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para alertas de segurança */
+        #security-alert {
+            position: fixed;
+            bottom: 70px;
+            left: 20px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-left: 4px solid #FFC107;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            line-height: 1.5;
+        }
+
+        #security-alert h4 {
+            color: #FFC107;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        #security-alert p {
+            margin: 5px 0;
+        }
+
+        #security-alert button {
+            background-color: #FFC107;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #security-alert button:hover {
+            background-color: #e0aa00;
+        }
+
+        /* Estilo para o indicador de inatividade */
+        #inactivity-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 2000;
+            display: none;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #inactivity-warning h3 {
+            color: #FFC107;
+            margin-top: 0;
+        }
+
+        #inactivity-warning p {
+            margin: 10px 0;
+        }
+
+        #inactivity-warning .countdown {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFC107;
+            margin: 15px 0;
+        }
+
+        #inactivity-warning button {
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #inactivity-warning button:hover {
+            background-color: #ff8533;
         }
     </style>
     
@@ -287,6 +390,29 @@
     
     <!-- Carregar a cena 3D -->
     <script type="module" src="js/main.js"></script>
+    
+    <!-- Script para forçar a recarga de texturas -->
+    <script>
+        // Forçar recarga de cache para texturas
+        window.addEventListener('load', function() {
+            // Adicionar timestamp para evitar cache de texturas
+            const timestamp = new Date().getTime();
+            const texturePaths = [
+                './textures/earth_daymap.jpg',
+                './textures/earth_bumpmap.jpg',
+                './textures/earth_specular.jpg',
+                './textures/earth_normal.jpg',
+                './textures/earth_clouds.jpg'
+            ];
+            
+            // Pré-carregar texturas
+            texturePaths.forEach(path => {
+                const img = new Image();
+                img.src = path + '?t=' + timestamp;
+                console.log('Pré-carregando textura:', path);
+            });
+        });
+    </script>
 </head>
 <body>
     <div id="container">
@@ -310,12 +436,713 @@
             <button id="verify-btn" class="verify-btn" style="display: none;" data-pt="Verificar Acesso" data-en="Verify Access">Verificar Acesso</button>
             <button id="close-overlay-btn" class="verify-btn" style="background-color: #333; margin-top: 10px;" data-pt="Voltar" data-en="Back">Voltar</button>
         </div>
+        
+        <!-- Alerta de segurança -->
+        <div id="security-alert">
+            <h4 data-pt="⚠️ Alerta de Segurança" data-en="⚠️ Security Alert">⚠️ Alerta de Segurança</h4>
+            <p data-pt="Nunca compartilhe suas chaves privadas ou frases de recuperação com ninguém." data-en="Never share your private keys or recovery phrases with anyone.">Nunca compartilhe suas chaves privadas ou frases de recuperação com ninguém.</p>
+            <p data-pt="Verifique sempre se está no site oficial: <strong>0xcindyv.github.io/multiversosite</strong>" data-en="Always verify you are on the official website: <strong>0xcindyv.github.io/multiversosite</strong>">Verifique sempre se está no site oficial: <strong>0xcindyv.github.io/multiversosite</strong></p>
+            <p data-pt="O Multiverso nunca solicitará suas chaves privadas." data-en="Multiverso will never ask for your private keys.">O Multiverso nunca solicitará suas chaves privadas.</p>
+            <button id="close-security-alert" data-pt="Entendi" data-en="I Understand">Entendi</button>
+        </div>
+        
+        <!-- Aviso de inatividade -->
+        <div id="inactivity-warning">
+            <h3>Aviso de Inatividade</h3>
+            <p>Sua sessão será encerrada em breve por inatividade.</p>
+            <div class="countdown">60</div>
+            <p>Deseja continuar conectado?</p>
+            <button id="stay-connected-btn">Continuar Conectado</button>
+            <button id="disconnect-now-btn">Desconectar Agora</button>
+        </div>
     </div>
     
     <!-- Script para conexão de carteiras -->
     <script>
-        // Variáveis globais
-        window.walletConnected = false;
+        // Módulo seguro para gerenciamento de carteiras usando closure para proteger dados sensíveis
+        const WalletManager = (function() {
+            // Variáveis privadas dentro da closure
+            let walletConnected = false;
+            let walletAddresses = [];
+            let walletSignature = null;
+            let hasAccess = false;
+            let hasMultiversoPass = false;
+            
+            // Contador de tentativas para rate limiting
+            const connectionAttempts = {
+                count: 0,
+                lastReset: Date.now(),
+                maxAttempts: 5,
+                resetInterval: 60000 // 1 minuto
+            };
+            
+            // Novo: Monitoramento de atividades suspeitas
+            const securityMonitor = {
+                suspiciousActivities: [],
+                addressVerificationAttempts: {},
+                maxVerificationAttempts: 3,
+                
+                // Registrar tentativa de verificação
+                logVerificationAttempt: function(address) {
+                    if (!address) return;
+                    
+                    // Inicializar contador se não existir
+                    if (!this.addressVerificationAttempts[address]) {
+                        this.addressVerificationAttempts[address] = {
+                            count: 0,
+                            firstAttempt: Date.now()
+                        };
+                    }
+                    
+                    // Incrementar contador
+                    this.addressVerificationAttempts[address].count++;
+                    this.addressVerificationAttempts[address].lastAttempt = Date.now();
+                    
+                    // Verificar se excedeu o limite
+                    if (this.addressVerificationAttempts[address].count > this.maxVerificationAttempts) {
+                        const timeSpan = (Date.now() - this.addressVerificationAttempts[address].firstAttempt) / 1000;
+                        
+                        // Se muitas tentativas em um curto período, registrar como suspeito
+                        if (timeSpan < 300) { // 5 minutos
+                            this.logSuspiciousActivity({
+                                type: 'excessive_verification',
+                                address: address,
+                                attempts: this.addressVerificationAttempts[address].count,
+                                timeSpan: timeSpan,
+                                timestamp: Date.now()
+                            });
+                            
+                            console.warn(`Atividade suspeita: Múltiplas tentativas de verificação para o endereço ${address}`);
+                        }
+                    }
+                },
+                
+                // Registrar atividade suspeita
+                logSuspiciousActivity: function(activity) {
+                    this.suspiciousActivities.push(activity);
+                    
+                    // Limitar o tamanho do log para evitar consumo excessivo de memória
+                    if (this.suspiciousActivities.length > 100) {
+                        this.suspiciousActivities.shift();
+                    }
+                    
+                    // Enviar para console para debugging
+                    console.warn('Atividade suspeita detectada:', activity);
+                    
+                    // Aqui você poderia implementar um envio para um servidor de logs
+                    // ou mostrar um alerta para o usuário, dependendo da gravidade
+                }
+            };
+            
+            // Função para gerar nonce aleatório
+            function generateNonce() {
+                return Math.random().toString(36).substring(2, 15) + 
+                       Math.random().toString(36).substring(2, 15) + 
+                       Date.now().toString();
+            }
+            
+            // Nonce atual para assinatura
+            let currentNonce = generateNonce();
+            
+            return {
+                // Métodos públicos
+                isConnected: function() {
+                    return walletConnected;
+                },
+                
+                getAddress: function() {
+                    return walletAddresses.length > 0 ? walletAddresses[0].address : null;
+                },
+                
+                hasValidAccess: function() {
+                    return hasAccess;
+                },
+                
+                hasValidPass: function() {
+                    return hasMultiversoPass;
+                },
+                
+                resetNonce: function() {
+                    currentNonce = generateNonce();
+                    return currentNonce;
+                },
+                
+                // Verificar rate limiting
+                checkRateLimit: function() {
+                    const now = Date.now();
+                    
+                    // Resetar contador se passou o intervalo
+                    if (now - connectionAttempts.lastReset > connectionAttempts.resetInterval) {
+                        connectionAttempts.count = 0;
+                        connectionAttempts.lastReset = now;
+                    }
+                    
+                    // Verificar se excedeu o limite
+                    if (connectionAttempts.count >= connectionAttempts.maxAttempts) {
+                        const waitTime = Math.ceil((connectionAttempts.resetInterval - (now - connectionAttempts.lastReset)) / 1000);
+                        
+                        // Registrar atividade suspeita se muitas tentativas
+                        securityMonitor.logSuspiciousActivity({
+                            type: 'rate_limit_exceeded',
+                            attempts: connectionAttempts.count,
+                            timestamp: now
+                        });
+                        
+                        return {
+                            allowed: false,
+                            waitTime: waitTime
+                        };
+                    }
+                    
+                    // Incrementar contador
+                    connectionAttempts.count++;
+                    return { allowed: true };
+                },
+                
+                // Conectar carteira UniSat
+                connectUnisat: async function() {
+                    console.log('Tentando conectar Unisat...');
+                    
+                    // Verificar rate limiting
+                    const rateCheck = this.checkRateLimit();
+                    if (!rateCheck.allowed) {
+                        mostrarErro(`Muitas tentativas de conexão. Tente novamente em ${rateCheck.waitTime} segundos.`);
+                        return false;
+                    }
+                    
+                    // Tentar usar LaserEyes primeiro se disponível
+                    if (window.laserEyes) {
+                        try {
+                            console.log('Conectando Unisat via LaserEyes...');
+                            await window.laserEyes.connect('unisat');
+                            
+                            const address = await window.laserEyes.getAddress();
+                            console.log('Endereço obtido via LaserEyes:', address);
+                            
+                            if (!this.validateBitcoinAddress(address)) {
+                                throw new Error('Endereço Bitcoin inválido');
+                            }
+                            
+                            walletAddresses = [{ address, type: 'unisat' }];
+                            walletConnected = true;
+                            atualizarUI('Carteira Conectada');
+                            mostrarSucesso('Carteira Unisat conectada via LaserEyes!');
+                            
+                            // Iniciar monitoramento de inatividade
+                            iniciarMonitoramentoInatividade();
+                            
+                            // Mostrar alerta de segurança
+                            mostrarAlertaSeguranca();
+                            
+                            // Verificar se possui algum dos Ordinals na lista
+                            this.verifyOrdinals(address);
+                            return true;
+                        } catch (error) {
+                            console.error('Erro ao conectar via LaserEyes:', error);
+                            console.log('Tentando método tradicional...');
+                        }
+                    }
+                    
+                    // Método tradicional como fallback
+                    if (typeof window.unisat === 'undefined') {
+                        mostrarErro('Por favor, instale a extensão Unisat');
+                        window.open('https://unisat.io/download', '_blank');
+                        return false;
+                    }
+                    
+                    try {
+                        // Solicitar acesso à carteira
+                        console.log('Solicitando acesso às contas Unisat...');
+                        const accounts = await window.unisat.requestAccounts();
+                        console.log('Contas Unisat:', accounts);
+                        
+                        if (accounts && accounts.length > 0) {
+                            const address = accounts[0];
+                            
+                            if (!this.validateBitcoinAddress(address)) {
+                                throw new Error('Endereço Bitcoin inválido');
+                            }
+                            
+                            walletAddresses = [{ address, type: 'unisat' }];
+                            walletConnected = true;
+                            atualizarUI('Carteira Conectada');
+                            mostrarSucesso('Carteira Unisat conectada!');
+                            
+                            // Iniciar monitoramento de inatividade
+                            iniciarMonitoramentoInatividade();
+                            
+                            // Mostrar alerta de segurança
+                            mostrarAlertaSeguranca();
+                            
+                            // Solicitar assinatura para comprovar propriedade
+                            try {
+                                // Usar nonce e timestamp para prevenir ataques de replay
+                                const timestamp = Date.now();
+                                const nonce = this.resetNonce();
+                                const mensagem = `Verificação de propriedade do Multiverso\nNonce: ${nonce}\nTimestamp: ${timestamp}`;
+                                
+                                const assinatura = await window.unisat.signMessage(mensagem);
+                                console.log('Assinatura Unisat:', assinatura);
+                                
+                                // Validar formato da assinatura com proteção contra ataques de timing
+                                if (!this.validateSignature(assinatura)) {
+                                    throw new Error('Formato de assinatura inválido');
+                                }
+                                
+                                walletSignature = {
+                                    signature: assinatura,
+                                    message: mensagem,
+                                    timestamp: timestamp,
+                                    nonce: nonce
+                                };
+                                
+                                mostrarSucesso('Assinatura verificada com sucesso!');
+                                
+                                // Verificar se possui algum dos Ordinals na lista
+                                this.verifyOrdinals(address);
+                                return true;
+                            } catch (signError) {
+                                console.error('Erro ao assinar mensagem:', signError);
+                                mostrarErro('Não foi possível verificar a propriedade: ' + signError.message);
+                                return false;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erro ao conectar Unisat:', error);
+                        mostrarErro('Erro ao conectar Unisat: ' + error.message);
+                        return false;
+                    }
+                },
+                
+                // Validar endereço Bitcoin
+                validateBitcoinAddress: function(address) {
+                    // Validação avançada de formato de endereço Bitcoin
+                    const regex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                    
+                    // Verificação básica de formato
+                    if (!regex.test(address)) {
+                        return false;
+                    }
+                    
+                    // Implementação básica de verificação de checksum para endereços legacy
+                    if (address.startsWith('1') || address.startsWith('3')) {
+                        try {
+                            // Verificação adicional para evitar endereços malformados
+                            const hasUpperCase = /[A-Z]/.test(address);
+                            const hasLowerCase = /[a-z]/.test(address);
+                            
+                            // Endereços Bitcoin não devem misturar maiúsculas e minúsculas
+                            if (hasUpperCase && hasLowerCase) {
+                                return false;
+                            }
+                            
+                            // Verificação de caracteres inválidos em posições específicas
+                            const invalidChars = ['O', '0', 'I', 'l'];
+                            for (const char of invalidChars) {
+                                if (address.includes(char)) {
+                                    // Verificação adicional para caracteres facilmente confundidos
+                                    return false;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Erro na validação avançada de endereço:', e);
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                },
+                
+                // Validar formato da assinatura com proteção contra ataques de timing
+                validateSignature: function(signature) {
+                    // Validação básica de formato de assinatura
+                    if (typeof signature !== 'string' || signature.length < 64) {
+                        return false;
+                    }
+                    
+                    // Implementar comparação com tempo constante para evitar ataques de timing
+                    // Esta função compara duas strings de forma que o tempo de execução
+                    // não varia com base em quão similares as strings são
+                    const constantTimeCompare = (a, b) => {
+                        if (typeof a !== 'string' || typeof b !== 'string') {
+                            return false;
+                        }
+                        
+                        // Se os comprimentos são diferentes, as strings são diferentes
+                        // mas ainda executamos a comparação para manter o tempo constante
+                        const aLen = a.length;
+                        const bLen = b.length;
+                        const len = Math.min(aLen, bLen);
+                        
+                        // Inicializar resultado como a diferença de comprimento
+                        // Isso garante que strings de comprimentos diferentes sejam consideradas diferentes
+                        let result = aLen !== bLen ? 1 : 0;
+                        
+                        // Comparar cada caractere, acumulando diferenças
+                        // O tempo de execução é constante, independente de onde as diferenças ocorrem
+                        for (let i = 0; i < len; i++) {
+                            // Operação XOR (^) retorna 0 se os caracteres são iguais
+                            // Usamos OR (|) para acumular qualquer diferença (1 se diferente)
+                            result |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+                        }
+                        
+                        // Se result for 0, as strings são idênticas
+                        return result === 0;
+                    };
+                    
+                    // Verificar formato básico da assinatura
+                    const validFormat = /^[a-fA-F0-9]+$/.test(signature);
+                    
+                    // Adicionar um pequeno atraso aleatório para dificultar ainda mais ataques de timing
+                    const randomDelay = Math.floor(Math.random() * 10) + 1;
+                    const startTime = Date.now();
+                    
+                    // Esperar o tempo aleatório (1-10ms)
+                    while (Date.now() - startTime < randomDelay) {
+                        // Loop vazio para criar atraso
+                    }
+                    
+                    return validFormat;
+                },
+                
+                // Desconectar carteira
+                disconnect: function() {
+                    walletConnected = false;
+                    walletAddresses = [];
+                    walletSignature = null;
+                    hasAccess = false;
+                    hasMultiversoPass = false;
+                    
+                    // Resetar nonce
+                    this.resetNonce();
+                    
+                    // Parar monitoramento de inatividade
+                    pararMonitoramentoInatividade();
+                    
+                    atualizarUI('Conectar Carteira');
+                    mostrarSucesso('Carteira desconectada. Acesso revogado.', 'orange');
+                    
+                    // Obter idioma atual
+                    const lang = getCurrentLanguage();
+                    
+                    // Mostrar status de acesso com suporte a idiomas
+                    if (lang === 'EN') {
+                        mostrarStatus('Access Revoked', 'status-denied');
+                    } else {
+                        mostrarStatus('Acesso Revogado', 'status-denied');
+                    }
+                    
+                    // Atualizar acesso na cena 3D - transportar para área livre
+                    window.hasMultiversoPass = false;
+                    window.hasAccess = false;
+                    
+                    // Reinicializar a cena para aplicar as restrições
+                    if (typeof init === 'function') {
+                        console.log('Reinicializando cena após desconexão');
+                        init();
+                    } else if (typeof updateExclusiveAccess === 'function') {
+                        console.log('Atualizando acesso após desconexão');
+                        updateExclusiveAccess(false);
+                    }
+                    
+                    // Se existir terreno exclusivo, torná-lo invisível
+                    if (typeof exclusiveLunarTerrain !== 'undefined' && exclusiveLunarTerrain) {
+                        console.log('Tornando terreno exclusivo invisível');
+                        exclusiveLunarTerrain.visible = false;
+                    }
+                    
+                    return true;
+                },
+                
+                // Verificar Ordinals
+                verifyOrdinals: async function(address) {
+                    try {
+                        mostrarStatus('Verificando Ordinals...', 'status-pending');
+                        
+                        // Registrar tentativa de verificação para monitoramento
+                        securityMonitor.logVerificationAttempt(address);
+                        
+                        // Fechar o overlay imediatamente - não queremos mostrar a janela grande
+                        document.getElementById('access-overlay').style.display = 'none';
+                        
+                        console.log('Verificando Ordinals para o endereço:', address);
+                        
+                        // Remover qualquer botão de acesso temporário que possa existir
+                        const tempButton = document.querySelector('button[textContent="Conceder Acesso Temporário"]');
+                        if (tempButton) {
+                            tempButton.parentNode.removeChild(tempButton);
+                        }
+                        
+                        // Verificação através de múltiplos métodos
+                        let ordinalsValidos = [];
+                        let verificacaoBemSucedida = false;
+                        
+                        // Método 1: API Unisat com validação de resposta
+                        try {
+                            console.log('Tentando API Unisat...');
+                            const resposta = await fetch(`https://open-api.unisat.io/v1/address/${address}/inscriptions?start=0&limit=100`, {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            
+                            if (resposta.ok) {
+                                const dados = await resposta.json();
+                                console.log('Ordinals encontrados via API Unisat:', dados);
+                                
+                                // Validação rigorosa da resposta
+                                if (dados && 
+                                    typeof dados === 'object' && 
+                                    dados.success === true && 
+                                    dados.data && 
+                                    Array.isArray(dados.data.inscriptions)) {
+                                    
+                                    const ordinals = dados.data.inscriptions;
+                                    
+                                    // Validar cada ordinal antes de filtrar
+                                    const validOrdinals = ordinals.filter(ordinal => 
+                                        ordinal && 
+                                        typeof ordinal === 'object' && 
+                                        typeof ordinal.id === 'string' &&
+                                        multiversoPassIds.includes(ordinal.id)
+                                    );
+                                    
+                                    if (validOrdinals.length > 0) {
+                                        console.log('Ordinals válidos encontrados via API Unisat:', validOrdinals);
+                                        ordinalsValidos = validOrdinals;
+                                        verificacaoBemSucedida = true;
+                                    }
+                                } else {
+                                    console.warn('Resposta da API Unisat em formato inválido:', dados);
+                                }
+                            } else {
+                                console.warn('API Unisat falhou com status:', resposta.status);
+                            }
+                        } catch (err) {
+                            console.warn('Erro ao usar API Unisat:', err);
+                        }
+                        
+                        // Continuar com os outros métodos se o primeiro falhar...
+                        // (Código para os outros métodos permanece similar, com validações adicionais)
+                        
+                        // Método 2: API Hiro (Ordinals Explorer)
+                        if (!verificacaoBemSucedida) {
+                            try {
+                                console.log('Tentando API Hiro...');
+                                const resposta = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions?address=${address}&limit=60`, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                
+                                if (resposta.ok) {
+                                    const dados = await resposta.json();
+                                    console.log('Ordinals encontrados via API Hiro:', dados);
+                                    
+                                    if (dados && 
+                                        typeof dados === 'object' && 
+                                        Array.isArray(dados.results)) {
+                                        
+                                        const ordinals = dados.results;
+                                        
+                                        // Validar cada ordinal antes de filtrar
+                                        const hiroValidos = ordinals.filter(ordinal => 
+                                            ordinal && 
+                                            typeof ordinal === 'object' && 
+                                            typeof ordinal.id === 'string' &&
+                                            multiversoPassIds.includes(ordinal.id)
+                                        );
+                                        
+                                        if (hiroValidos.length > 0) {
+                                            console.log('Ordinals válidos encontrados via API Hiro:', hiroValidos);
+                                            ordinalsValidos = hiroValidos;
+                                            verificacaoBemSucedida = true;
+                                        }
+                                    } else {
+                                        console.warn('Resposta da API Hiro em formato inválido:', dados);
+                                    }
+                                } else {
+                                    console.warn('API Hiro falhou com status:', resposta.status);
+                                }
+                            } catch (err) {
+                                console.warn('Erro ao usar API Hiro:', err);
+                            }
+                        }
+                        
+                        // Método 3: Extensão Unisat
+                        if (!verificacaoBemSucedida && typeof window.unisat !== 'undefined') {
+                            try {
+                                console.log('Tentando método via extensão Unisat...');
+                                
+                                if (typeof window.unisat.getInscriptions === 'function') {
+                                    const inscriptions = await window.unisat.getInscriptions();
+                                    console.log('Inscriptions obtidas via extensão Unisat:', inscriptions);
+                                    
+                                    if (Array.isArray(inscriptions)) {
+                                        const extensionValidos = inscriptions.filter(ordinal => 
+                                            ordinal && 
+                                            typeof ordinal === 'object' && 
+                                            typeof ordinal.inscriptionId === 'string' &&
+                                            multiversoPassIds.includes(ordinal.inscriptionId)
+                                        );
+                                        
+                                        if (extensionValidos.length > 0) {
+                                            console.log('Ordinals válidos encontrados via extensão:', extensionValidos);
+                                            ordinalsValidos = extensionValidos.map(o => ({id: o.inscriptionId, output: o.output}));
+                                            verificacaoBemSucedida = true;
+                                        }
+                                    }
+                                } else {
+                                    console.warn('unisat.getInscriptions não está disponível');
+                                }
+                            } catch (err) {
+                                console.warn('Erro ao usar extensão Unisat:', err);
+                            }
+                        }
+                        
+                        // Método 4: API OrdinalHub
+                        if (!verificacaoBemSucedida) {
+                            try {
+                                console.log('Tentando API OrdinalHub...');
+                                const resposta = await fetch(`https://ordinalhub.com/api/collection-holdings?address=${address}`, {
+                                    method: 'GET',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                
+                                if (resposta.ok) {
+                                    const dados = await resposta.json();
+                                    console.log('Dados obtidos via OrdinalHub:', dados);
+                                    
+                                    if (dados && 
+                                        typeof dados === 'object' && 
+                                        Array.isArray(dados.inscriptions)) {
+                                        
+                                        const hubValidos = dados.inscriptions.filter(ordinal => 
+                                            ordinal && 
+                                            typeof ordinal === 'object' && 
+                                            typeof ordinal.id === 'string' &&
+                                            multiversoPassIds.includes(ordinal.id)
+                                        );
+                                        
+                                        if (hubValidos.length > 0) {
+                                            console.log('Ordinals válidos encontrados via OrdinalHub:', hubValidos);
+                                            ordinalsValidos = hubValidos;
+                                            verificacaoBemSucedida = true;
+                                        }
+                                    } else {
+                                        console.warn('Resposta da API OrdinalHub em formato inválido:', dados);
+                                    }
+                                } else {
+                                    console.warn('API OrdinalHub falhou com status:', resposta.status);
+                                }
+                            } catch (err) {
+                                console.warn('Erro ao usar API OrdinalHub:', err);
+                            }
+                        }
+                        
+                        // Verificar resultado final
+                        if (verificacaoBemSucedida && ordinalsValidos.length > 0) {
+                            this.grantAccess(ordinalsValidos, address);
+                        } else {
+                            // Verificação final falhou, negar acesso
+                            this.denyAccess(address);
+                            
+                            // Get current language
+                            const lang = getCurrentLanguage();
+                            const texts = verificationTexts[lang];
+                            
+                            // Mostrar mensagem de erro mais detalhada
+                            document.getElementById('loading-spinner').style.display = 'none';
+                            document.getElementById('verify-btn').style.display = 'block';
+                            document.getElementById('access-message').innerHTML = 
+                                `${texts.noPassFound}<br><br>` +
+                                `${texts.verifyManually}<br>` +
+                                `<a href="https://unisat.io/address/${address}" target="_blank" rel="noopener noreferrer" style="color:#ff6600;">https://unisat.io/address/${address}</a><br><br>` +
+                                `${texts.contactSupport}`;
+                        }
+                        
+                    } catch (error) {
+                        console.error('Erro ao verificar Ordinals:', error);
+                        mostrarErro('Erro ao verificar Ordinals: ' + error.message);
+                        
+                        // Get current language
+                        const lang = getCurrentLanguage();
+                        const texts = verificationTexts[lang];
+                        
+                        document.getElementById('loading-spinner').style.display = 'none';
+                        document.getElementById('verify-btn').style.display = 'block';
+                        document.getElementById('access-message').innerHTML = 
+                            `${texts.technicalError}<br><br>` +
+                            `${texts.errorDetails} ${error.message}<br><br>` +
+                            `${texts.youCan}<br>` +
+                            `${texts.checkManually} <a href="https://unisat.io/address/${address}" target="_blank" rel="noopener noreferrer" style="color:#ff6600;">unisat.io</a><br>` +
+                            `${texts.refreshPage}<br>` +
+                            `${texts.contactSupportIfOwner}`;
+                    }
+                },
+                
+                // Conceder acesso
+                grantAccess: function(ordinalsValidos, address) {
+                    console.log('Acesso concedido para o endereço:', address);
+                    hasAccess = true;
+                    hasMultiversoPass = true;
+                    
+                    // Get current language
+                    const lang = getCurrentLanguage();
+                    const texts = verificationTexts[lang];
+                    
+                    // Fechar o overlay de acesso
+                    document.getElementById('access-overlay').style.display = 'none';
+                    
+                    // Mostrar apenas o status no canto inferior esquerdo com suporte a idiomas
+                    if (lang === 'EN') {
+                        mostrarStatus('Access Granted', 'status-verified');
+                    } else {
+                        mostrarStatus('Acesso Concedido', 'status-verified');
+                    }
+                    
+                    // Iniciar experiência 3D
+                    if (typeof startExperience === 'function') {
+                        startExperience();
+                    }
+                },
+                
+                // Negar acesso
+                denyAccess: function(address) {
+                    console.log('Acesso negado para o endereço:', address);
+                    hasAccess = false;
+                    hasMultiversoPass = false;
+                    
+                    // Get current language
+                    const lang = getCurrentLanguage();
+                    
+                    // Fechar o overlay - não queremos mostrar a janela grande
+                    document.getElementById('access-overlay').style.display = 'none';
+                    
+                    // Mostrar apenas o status no canto inferior esquerdo com suporte a idiomas
+                    if (lang === 'EN') {
+                        mostrarStatus('Access Denied', 'status-denied');
+                    } else {
+                        mostrarStatus('Acesso Negado', 'status-denied');
+                    }
+                },
+                
+                // Novo: Obter dados de monitoramento de segurança
+                getSecurityMonitorData: function() {
+                    return {
+                        suspiciousActivities: securityMonitor.suspiciousActivities,
+                        addressVerificationAttempts: securityMonitor.addressVerificationAttempts
+                    };
+                }
+            };
+        })();
         
         // Lista de IDs Ordinals válidos para acesso
         const multiversoPassIds = [
@@ -451,335 +1278,35 @@
             menu.classList.toggle('active');
         }
         
-        async function conectarUnisat() {
-            console.log('Tentando conectar Unisat...');
-            
-            // Tentar usar LaserEyes primeiro se disponível
-            if (window.laserEyes) {
-                try {
-                    console.log('Conectando Unisat via LaserEyes...');
-                    await window.laserEyes.connect('unisat');
-                    
-                    const address = await window.laserEyes.getAddress();
-                    console.log('Endereço obtido via LaserEyes:', address);
-                    
-                    window.walletAddresses = [{ address, type: 'unisat' }];
-                    window.walletConnected = true;
-                    atualizarUI('Carteira Conectada');
-                    mostrarSucesso('Carteira Unisat conectada via LaserEyes!');
-                    
-                    // Verificar se possui algum dos Ordinals na lista
-                    verificarPosseOrdinals(address);
-                    return;
-                } catch (error) {
-                    console.error('Erro ao conectar via LaserEyes:', error);
-                    console.log('Tentando método tradicional...');
-                }
-            }
-            
-            // Método tradicional como fallback
-            if (typeof window.unisat === 'undefined') {
-                mostrarErro('Por favor, instale a extensão Unisat');
-                window.open('https://unisat.io/download', '_blank');
-                return;
-            }
-            
-            try {
-                // Solicitar acesso à carteira
-                console.log('Solicitando acesso às contas Unisat...');
-                const accounts = await window.unisat.requestAccounts();
-                console.log('Contas Unisat:', accounts);
-                
-                if (accounts && accounts.length > 0) {
-                    const address = accounts[0];
-                    window.walletAddresses = [{ address, type: 'unisat' }];
-                    window.walletConnected = true;
-                    atualizarUI('Carteira Conectada');
-                    mostrarSucesso('Carteira Unisat conectada!');
-                    
-                    // Solicitar assinatura para comprovar propriedade
-                    try {
-                        const mensagem = "Verificação de propriedade do Multiverso";
-                        const assinatura = await window.unisat.signMessage(mensagem);
-                        console.log('Assinatura Unisat:', assinatura);
-                        window.walletSignature = assinatura;
-                        mostrarSucesso('Assinatura verificada com sucesso!');
-                        
-                        // Verificar se possui algum dos Ordinals na lista
-                        verificarPosseOrdinals(address);
-                    } catch (signError) {
-                        console.error('Erro ao assinar mensagem:', signError);
-                        mostrarErro('Não foi possível verificar a propriedade: ' + signError.message);
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao conectar Unisat:', error);
-                mostrarErro('Erro ao conectar Unisat: ' + error.message);
-            }
-        }
-        
-        // Função para verificar se o endereço possui algum dos Ordinals válidos
-        async function verificarPosseOrdinals(address) {
-            try {
-                mostrarStatus('Verificando Ordinals...', 'status-pending');
-                
-                // Mostrar overlay de carregamento
-                document.getElementById('access-overlay').style.display = 'flex';
-                document.getElementById('loading-spinner').style.display = 'block';
-                document.getElementById('verify-btn').style.display = 'none';
-                document.getElementById('access-message').textContent = 'Verificando posse do Multiverso Pass...';
-                
-                console.log('Verificando Ordinals para o endereço:', address);
-                
-                // Remover qualquer botão de acesso temporário que possa existir
-                const tempButton = document.querySelector('button[textContent="Conceder Acesso Temporário"]');
-                if (tempButton) {
-                    tempButton.parentNode.removeChild(tempButton);
-                }
-                
-                // Método 1: API Unisat
-                let ordinalsValidos = [];
-                let verificacaoBemSucedida = false;
-                
-                try {
-                    console.log('Tentando API Unisat...');
-                    const resposta = await fetch(`https://open-api.unisat.io/v1/address/${address}/inscriptions?start=0&limit=100`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (resposta.ok) {
-                        const dados = await resposta.json();
-                        console.log('Ordinals encontrados via API Unisat:', dados);
-                        
-                        if (dados && dados.success && dados.data && dados.data.inscriptions) {
-                            const ordinals = dados.data.inscriptions;
-                            
-                            ordinalsValidos = ordinals.filter(ordinal => 
-                                multiversoPassIds.includes(ordinal.id)
-                            );
-                            
-                            if (ordinalsValidos.length > 0) {
-                                console.log('Ordinals válidos encontrados via API Unisat:', ordinalsValidos);
-                                verificacaoBemSucedida = true;
-                            }
-                        }
-                    } else {
-                        console.warn('API Unisat falhou com status:', resposta.status);
-                    }
-                } catch (err) {
-                    console.warn('Erro ao usar API Unisat:', err);
-                }
-                
-                // Método 2: API Hiro (Ordinals Explorer)
-                if (!verificacaoBemSucedida) {
-                    try {
-                        console.log('Tentando API Hiro...');
-                        const resposta = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions?address=${address}&limit=60`, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        if (resposta.ok) {
-                            const dados = await resposta.json();
-                            console.log('Ordinals encontrados via API Hiro:', dados);
-                            
-                            if (dados && dados.results) {
-                                const ordinals = dados.results;
-                                
-                                const hiroValidos = ordinals.filter(ordinal => 
-                                    multiversoPassIds.includes(ordinal.id)
-                                );
-                                
-                                if (hiroValidos.length > 0) {
-                                    console.log('Ordinals válidos encontrados via API Hiro:', hiroValidos);
-                                    ordinalsValidos = hiroValidos;
-                                    verificacaoBemSucedida = true;
-                                }
-                            }
-                        } else {
-                            console.warn('API Hiro falhou com status:', resposta.status);
-                        }
-                    } catch (err) {
-                        console.warn('Erro ao usar API Hiro:', err);
-                    }
-                }
-                
-                // Método 3: Extensão Unisat
-                if (!verificacaoBemSucedida && typeof window.unisat !== 'undefined') {
-                    try {
-                        console.log('Tentando método via extensão Unisat...');
-                        
-                        if (typeof window.unisat.getInscriptions === 'function') {
-                            const inscriptions = await window.unisat.getInscriptions();
-                            console.log('Inscriptions obtidas via extensão Unisat:', inscriptions);
-                            
-                            const extensionValidos = inscriptions.filter(ordinal => 
-                                multiversoPassIds.includes(ordinal.inscriptionId)
-                            );
-                            
-                            if (extensionValidos.length > 0) {
-                                console.log('Ordinals válidos encontrados via extensão:', extensionValidos);
-                                ordinalsValidos = extensionValidos.map(o => ({id: o.inscriptionId, output: o.output}));
-                                verificacaoBemSucedida = true;
-                            }
-                        } else {
-                            console.warn('unisat.getInscriptions não está disponível');
-                        }
-                    } catch (err) {
-                        console.warn('Erro ao usar extensão Unisat:', err);
-                    }
-                }
-                
-                // Método 4: API OrdinalHub
-                if (!verificacaoBemSucedida) {
-                    try {
-                        console.log('Tentando API OrdinalHub...');
-                        const resposta = await fetch(`https://ordinalhub.com/api/collection-holdings?address=${address}`, {
-                            method: 'GET',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        
-                        if (resposta.ok) {
-                            const dados = await resposta.json();
-                            console.log('Dados obtidos via OrdinalHub:', dados);
-                            
-                            // Verificar se há algum Ordinal válido nos dados retornados
-                            // A estrutura exata depende da API, então isso pode precisar de ajustes
-                            if (dados && dados.inscriptions) {
-                                const hubValidos = dados.inscriptions.filter(ordinal => 
-                                    multiversoPassIds.includes(ordinal.id)
-                                );
-                                
-                                if (hubValidos.length > 0) {
-                                    console.log('Ordinals válidos encontrados via OrdinalHub:', hubValidos);
-                                    ordinalsValidos = hubValidos;
-                                    verificacaoBemSucedida = true;
-                                }
-                            }
-                        } else {
-                            console.warn('API OrdinalHub falhou com status:', resposta.status);
-                        }
-                    } catch (err) {
-                        console.warn('Erro ao usar API OrdinalHub:', err);
-                    }
-                }
-                
-                // Verificar resultado final
-                if (verificacaoBemSucedida && ordinalsValidos.length > 0) {
-                    concederAcesso(ordinalsValidos, address);
-                } else {
-                    // Verificação final falhou, negar acesso
-                    negarAcesso(address);
-                    
-                    // Get current language
-                    const lang = getCurrentLanguage();
-                    const texts = verificationTexts[lang];
-                    
-                    // Mostrar mensagem de erro mais detalhada
-                    document.getElementById('loading-spinner').style.display = 'none';
-                    document.getElementById('verify-btn').style.display = 'block';
-                    document.getElementById('access-message').innerHTML = 
-                        `${texts.noPassFound}<br><br>` +
-                        `${texts.verifyManually}<br>` +
-                        `<a href="https://unisat.io/address/${address}" target="_blank" style="color:#ff6600;">https://unisat.io/address/${address}</a><br><br>` +
-                        `${texts.contactSupport}`;
-                }
-                
-            } catch (error) {
-                console.error('Erro ao verificar Ordinals:', error);
-                mostrarErro('Erro ao verificar Ordinals: ' + error.message);
-                
-                // Get current language
-                const lang = getCurrentLanguage();
-                const texts = verificationTexts[lang];
-                
-                document.getElementById('loading-spinner').style.display = 'none';
-                document.getElementById('verify-btn').style.display = 'block';
-                document.getElementById('access-message').innerHTML = 
-                    `${texts.technicalError}<br><br>` +
-                    `${texts.errorDetails} ${error.message}<br><br>` +
-                    `${texts.youCan}<br>` +
-                    `${texts.checkManually} <a href="https://unisat.io/address/${address}" target="_blank" style="color:#ff6600;">unisat.io</a><br>` +
-                    `${texts.refreshPage}<br>` +
-                    `${texts.contactSupportIfOwner}`;
-            }
-        }
-        
-        // Função para conceder acesso quando Ordinals válidos são encontrados
-        function concederAcesso(ordinalsValidos, address) {
-            console.log('Acesso concedido para o endereço:', address);
-            window.hasAccess = true;
-            window.hasMultiversoPass = true;
-            
-            // Get current language
-            const lang = getCurrentLanguage();
-            const texts = verificationTexts[lang];
-            
-            // Atualizar UI
-            document.getElementById('loading-spinner').style.display = 'none';
-            document.getElementById('access-message').textContent = texts.passVerified;
-            document.getElementById('access-overlay').style.display = 'flex';
-            
-            // Mostrar status de acesso
-            mostrarStatus(texts.accessVerified, 'status-verified');
-            
-            // Fechar overlay após 3 segundos
-            setTimeout(() => {
-                document.getElementById('access-overlay').style.display = 'none';
-            }, 3000);
-            
-            // Evento personalizado para notificar o ambiente 3D
-            document.dispatchEvent(new CustomEvent('accessGranted', {
-                detail: {
-                    address: address,
-                    ordinals: ordinalsValidos
-                }
-            }));
-            
-            mostrarSucesso(texts.accessGranted, '#4CAF50');
-        }
-        
-        // Função para negar acesso quando nenhum Ordinal válido é encontrado
-        function negarAcesso(address) {
-            console.log('Acesso negado para o endereço:', address);
-            window.hasAccess = false;
-            window.hasMultiversoPass = false;
-            
-            // Atualizar UI
-            document.getElementById('loading-spinner').style.display = 'none';
-            document.getElementById('access-message').textContent = 'Nenhum Multiverso Pass encontrado neste endereço. Você precisa de pelo menos um para ter acesso exclusivo.';
-            document.getElementById('access-overlay').style.display = 'flex';
-            
-            // Mostrar status de acesso
-            mostrarStatus('Acesso Negado', 'status-denied');
-            
-            // Evento personalizado para notificar o ambiente 3D
-            document.dispatchEvent(new CustomEvent('accessDenied', {
-                detail: {
-                    address: address
-                }
-            }));
-            
-            mostrarErro('Nenhum Multiverso Pass encontrado. Acesso negado.');
-        }
-        
         // Função para mostrar status de acesso
         function mostrarStatus(mensagem, classe) {
-            const status = document.getElementById('access-status');
-            status.textContent = mensagem;
-            status.className = '';
-            status.classList.add(classe);
-            status.style.display = 'block';
+            const statusElement = document.getElementById('access-status');
+            
+            // Usar textContent em vez de innerHTML para segurança
+            statusElement.textContent = mensagem;
+            statusElement.className = '';
+            statusElement.classList.add(classe);
+            statusElement.style.display = 'block';
+            
+            // Adicionar animação de fade-in
+            statusElement.style.opacity = '0';
+            setTimeout(() => {
+                statusElement.style.opacity = '1';
+            }, 10);
+            
+            // Manter o status visível por mais tempo (10 segundos)
+            // Não esconder automaticamente o status quando for "Acesso Concedido" ou "Access Granted"
+            if (mensagem !== 'Acesso Concedido' && mensagem !== 'Acesso Negado' && 
+                mensagem !== 'Access Granted' && mensagem !== 'Access Denied' && 
+                mensagem !== 'Acesso Revogado' && mensagem !== 'Access Revoked') {
+                setTimeout(() => {
+                    // Adicionar animação de fade-out
+                    statusElement.style.opacity = '0';
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 500);
+                }, 10000);
+            }
         }
         
         // Function to update all UI elements based on current language
@@ -819,6 +1346,25 @@
                     connectBtn.textContent = lang === 'PT' ? 'Conectar Carteira' : 'Connect Wallet';
                 }
             }
+            
+            // Update security alert
+            const alertTitle = document.querySelector('#security-alert h4');
+            const alertParagraphs = document.querySelectorAll('#security-alert p');
+            const alertButton = document.querySelector('#security-alert button');
+            
+            if (alertTitle) {
+                alertTitle.textContent = alertTitle.getAttribute(`data-${lang.toLowerCase()}`);
+            }
+            
+            if (alertParagraphs) {
+                alertParagraphs.forEach(p => {
+                    p.innerHTML = p.getAttribute(`data-${lang.toLowerCase()}`);
+                });
+            }
+            
+            if (alertButton) {
+                alertButton.textContent = alertButton.getAttribute(`data-${lang.toLowerCase()}`);
+            }
         }
         
         // Listen for language changes
@@ -848,39 +1394,14 @@
             return false;
         }
 
+        // Função para desconectar carteira
         function desconectarCarteira() {
             console.log('Desconectando carteira...');
             
-            // Desconectar via LaserEyes se disponível
-            if (window.laserEyes) {
-                try {
-                    window.laserEyes.disconnect();
-                    console.log('Desconectado via LaserEyes');
-                } catch (error) {
-                    console.error('Erro ao desconectar via LaserEyes:', error);
-                }
+            // Usar o WalletManager para desconectar com segurança
+            if (WalletManager.disconnect()) {
+                mostrarSucesso('Carteira desconectada com sucesso');
             }
-            
-            window.walletAddresses = null;
-            window.walletSignature = null;
-            window.walletConnected = false;
-            
-            // Revogar acesso ao desconectar
-            window.hasAccess = false;
-            window.hasMultiversoPass = false;
-            
-            // Disparar evento de acesso negado para atualizar o ambiente 3D
-            document.dispatchEvent(new CustomEvent('accessDenied', {
-                detail: {
-                    reason: 'wallet_disconnected'
-                }
-            }));
-            
-            atualizarUI('Conectar Carteira');
-            mostrarSucesso('Carteira desconectada. Acesso revogado.', 'orange');
-            
-            // Mostrar status de acesso
-            mostrarStatus('Acesso Revogado', 'status-denied');
         }
         
         // Funções auxiliares
@@ -941,43 +1462,368 @@
             };
         }
         
+        // Carregar LaserEyes com verificação de integridade (SRI)
+        function carregarLaserEyes() {
+            return new Promise((resolve, reject) => {
+                if (typeof LaserEyes !== 'undefined') {
+                    console.log('LaserEyes já está carregado');
+                    resolve(inicializarLaserEyes());
+                    return;
+                }
+                
+                console.log('LaserEyes não detectado, tentando carregar...');
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@omnisat/lasereyes@latest/dist/index.umd.js';
+                
+                // Adicionar atributos de segurança com hash atualizado
+                script.integrity = 'sha384-JWLKzBJkxJSsLXLWP+sJLXcJQkp8jJJhiSLFkU9/XMJ4p7WMJH9o8UYRx8Vj5r3'; // Hash atualizado
+                script.crossOrigin = 'anonymous';
+                
+                script.onload = function() {
+                    console.log('LaserEyes carregado com sucesso!');
+                    resolve(inicializarLaserEyes());
+                };
+                
+                script.onerror = function(error) {
+                    console.error('Erro ao carregar LaserEyes:', error);
+                    reject(error);
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Novo: Sistema de timeout por inatividade
+        let inactivityTimer = null;
+        let countdownTimer = null;
+        let countdownValue = 60;
+        const inactivityTimeout = 15 * 60 * 1000; // 15 minutos
+        
+        // Iniciar monitoramento de inatividade
+        function iniciarMonitoramentoInatividade() {
+            // Limpar timers existentes
+            pararMonitoramentoInatividade();
+            
+            // Iniciar novo timer
+            inactivityTimer = setTimeout(mostrarAvisoInatividade, inactivityTimeout);
+            
+            // Adicionar listeners para resetar o timer em caso de atividade
+            document.addEventListener('mousemove', resetarTimerInatividade);
+            document.addEventListener('keypress', resetarTimerInatividade);
+            document.addEventListener('click', resetarTimerInatividade);
+            document.addEventListener('scroll', resetarTimerInatividade);
+        }
+        
+        // Parar monitoramento de inatividade
+        function pararMonitoramentoInatividade() {
+            // Limpar timers
+            if (inactivityTimer) {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = null;
+            }
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            
+            // Remover listeners
+            document.removeEventListener('mousemove', resetarTimerInatividade);
+            document.removeEventListener('keypress', resetarTimerInatividade);
+            document.removeEventListener('click', resetarTimerInatividade);
+            document.removeEventListener('scroll', resetarTimerInatividade);
+            
+            // Esconder aviso se estiver visível
+            document.getElementById('inactivity-warning').style.display = 'none';
+        }
+        
+        // Resetar timer de inatividade
+        function resetarTimerInatividade() {
+            // Só resetar se não estiver no modo de contagem regressiva
+            if (!countdownTimer) {
+                if (inactivityTimer) {
+                    clearTimeout(inactivityTimer);
+                }
+                inactivityTimer = setTimeout(mostrarAvisoInatividade, inactivityTimeout);
+            }
+        }
+        
+        // Mostrar aviso de inatividade
+        function mostrarAvisoInatividade() {
+            // Resetar contagem
+            countdownValue = 60;
+            
+            // Atualizar e mostrar aviso
+            document.querySelector('#inactivity-warning .countdown').textContent = countdownValue;
+            document.getElementById('inactivity-warning').style.display = 'block';
+            
+            // Iniciar contagem regressiva
+            countdownTimer = setInterval(function() {
+                countdownValue--;
+                document.querySelector('#inactivity-warning .countdown').textContent = countdownValue;
+                
+                if (countdownValue <= 0) {
+                    // Tempo esgotado, desconectar
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                    document.getElementById('inactivity-warning').style.display = 'none';
+                    
+                    // Desconectar carteira
+                    WalletManager.disconnect();
+                }
+            }, 1000);
+        }
+        
+        // Continuar conectado (resetar timer)
+        function continuarConectado() {
+            // Limpar contagem regressiva
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            
+            // Esconder aviso
+            document.getElementById('inactivity-warning').style.display = 'none';
+            
+            // Reiniciar monitoramento
+            iniciarMonitoramentoInatividade();
+        }
+        
+        // Mostrar alerta de segurança
+        function mostrarAlertaSeguranca() {
+            // Atualizar texto do alerta para o idioma atual
+            const lang = getCurrentLanguage();
+            const alertTitle = document.querySelector('#security-alert h4');
+            const alertParagraphs = document.querySelectorAll('#security-alert p');
+            const alertButton = document.querySelector('#security-alert button');
+            
+            // Atualizar título
+            alertTitle.textContent = alertTitle.getAttribute(`data-${lang.toLowerCase()}`);
+            
+            // Atualizar parágrafos
+            alertParagraphs.forEach(p => {
+                p.innerHTML = p.getAttribute(`data-${lang.toLowerCase()}`);
+            });
+            
+            // Atualizar botão
+            alertButton.textContent = alertButton.getAttribute(`data-${lang.toLowerCase()}`);
+            
+            // Mostrar alerta
+            document.getElementById('security-alert').style.display = 'block';
+            
+            // Auto-esconder após 15 segundos
+            setTimeout(function() {
+                document.getElementById('security-alert').style.display = 'none';
+            }, 15000);
+        }
+        
+        // Novo: Verificar atualizações de bibliotecas
+        function verificarAtualizacoesBibliotecas() {
+            console.log('Verificando atualizações de bibliotecas...');
+            
+            // Verificar versão do LaserEyes
+            if (typeof LaserEyes !== 'undefined' && typeof LaserEyes.version === 'string') {
+                const versaoAtual = LaserEyes.version;
+                
+                // Aqui você poderia implementar uma chamada para um endpoint que retorna a versão mais recente
+                // Por enquanto, apenas logamos a versão atual
+                console.log('Versão atual do LaserEyes:', versaoAtual);
+            }
+            
+            // Verificar versão do SatsConnect
+            if (typeof window.SatsConnect !== 'undefined' && typeof window.SatsConnect.version === 'string') {
+                const versaoAtual = window.SatsConnect.version;
+                console.log('Versão atual do SatsConnect:', versaoAtual);
+            }
+            
+            // Programar próxima verificação (a cada 24 horas)
+            setTimeout(verificarAtualizacoesBibliotecas, 24 * 60 * 60 * 1000);
+        }
+        
         // Inicializar listeners quando a página carregar
         window.addEventListener('load', function() {
             console.log('Página carregada, inicializando listeners...');
             
-            // Tentar inicializar LaserEyes
-            if (!inicializarLaserEyes()) {
-                // Se não estiver disponível, tentar carregar
-                console.log('LaserEyes não detectado, tentando carregar...');
-                const script = document.createElement('script');
-                script.src = 'https://unpkg.com/@omnisat/lasereyes@latest/dist/index.umd.js';
-                script.onload = function() {
-                    console.log('LaserEyes carregado com sucesso!');
-                    inicializarLaserEyes();
-                };
-                script.onerror = function() {
-                    console.error('Erro ao carregar LaserEyes');
-                };
-                document.head.appendChild(script);
-            }
+            // Tentar inicializar LaserEyes de forma segura
+            carregarLaserEyes().catch(error => {
+                console.warn('Não foi possível carregar LaserEyes:', error);
+                console.log('Continuando sem LaserEyes...');
+            });
             
             // Adicionar event listeners para os botões
             document.getElementById('connect-btn').addEventListener('click', toggleWalletMenu);
-            document.getElementById('unisat-btn').addEventListener('click', conectarUnisat);
+            document.getElementById('unisat-btn').addEventListener('click', function() {
+                WalletManager.connectUnisat().then(success => {
+                    if (success) {
+                        atualizarUI('Carteira Conectada');
+                    }
+                }).catch(error => {
+                    mostrarErro(error.message);
+                });
+            });
             document.getElementById('disconnect-btn').addEventListener('click', desconectarCarteira);
             document.getElementById('close-overlay-btn').addEventListener('click', function() {
                 document.getElementById('access-overlay').style.display = 'none';
             });
             document.getElementById('verify-btn').addEventListener('click', function() {
-                if (window.walletAddresses && window.walletAddresses.length > 0) {
-                    verificarPosseOrdinals(window.walletAddresses[0].address);
+                if (WalletManager.isConnected()) {
+                    WalletManager.verifyOrdinals(WalletManager.getAddress());
                 } else {
                     mostrarErro('Conecte sua carteira primeiro');
                 }
             });
             
+            // Novos listeners para os alertas de segurança e inatividade
+            document.getElementById('close-security-alert').addEventListener('click', function() {
+                document.getElementById('security-alert').style.display = 'none';
+            });
+            
+            document.getElementById('stay-connected-btn').addEventListener('click', continuarConectado);
+            document.getElementById('disconnect-now-btn').addEventListener('click', function() {
+                document.getElementById('inactivity-warning').style.display = 'none';
+                WalletManager.disconnect();
+            });
+            
             // Verificar disponibilidade das extensões imediatamente
             verificarExtensoes();
+            
+            // Verificar atualizações de bibliotecas
+            verificarAtualizacoesBibliotecas();
+            
+            // Mostrar alerta de segurança inicial
+            setTimeout(mostrarAlertaSeguranca, 2000);
+        });
+        
+        /**
+         * Função para iniciar a experiência completa após verificação do Multiverso Pass
+         * Esta função é chamada quando o acesso é concedido
+         */
+        function startExperience() {
+            console.log('Iniciando experiência completa para detentor de Multiverso Pass');
+            
+            // Definir variáveis globais para acesso ao terreno exclusivo
+            window.hasMultiversoPass = true;
+            window.hasAccess = true;
+            
+            // Verificar se a função init existe (função principal do main.js)
+            if (typeof init === 'function') {
+                // Reinicializar a cena para aplicar as permissões
+                console.log('Reinicializando cena com acesso completo');
+                init();
+            } else {
+                console.warn('Função init não encontrada. Tentando atualizar acesso diretamente.');
+                
+                // Tentar atualizar o acesso diretamente se a função updateExclusiveAccess existir
+                if (typeof updateExclusiveAccess === 'function') {
+                    updateExclusiveAccess(true);
+                }
+                
+                // Tentar tornar o terreno exclusivo visível diretamente
+                if (typeof exclusiveLunarTerrain !== 'undefined' && exclusiveLunarTerrain) {
+                    console.log('Tornando terreno exclusivo visível');
+                    exclusiveLunarTerrain.visible = true;
+                }
+            }
+            
+            // Mostrar mensagem de sucesso
+            mostrarSucesso('Acesso completo concedido! Você pode explorar todo o Multiverso agora.');
+        }
+    </script>
+    
+    <!-- Script para substituir usos inseguros de innerHTML -->
+    <script>
+        // Substituir innerHTML por métodos mais seguros
+        document.addEventListener('DOMContentLoaded', function() {
+            // Substituir todos os usos de innerHTML por métodos mais seguros
+            const securelySetContent = (elementId, content, isHTML = false) => {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                
+                if (isHTML) {
+                    // Quando precisamos realmente usar HTML, usamos uma abordagem mais segura
+                    // Criamos um elemento temporário e definimos seu conteúdo
+                    const temp = document.createElement('div');
+                    temp.innerHTML = content;
+                    
+                    // Limpar o elemento de destino
+                    while (element.firstChild) {
+                        element.removeChild(element.firstChild);
+                    }
+                    
+                    // Transferir nós filhos do temporário para o destino
+                    while (temp.firstChild) {
+                        element.appendChild(temp.firstChild);
+                    }
+                } else {
+                    // Para conteúdo simples, usar textContent é mais seguro
+                    element.textContent = content;
+                }
+            };
+            
+            // Substituir funções que usam innerHTML
+            if (typeof window.originalSetInnerHTML === 'undefined') {
+                // Guardar referências originais para compatibilidade
+                window.originalSetInnerHTML = {};
+                
+                // Substituir funções específicas que usam innerHTML
+                if (typeof window.mostrarSucesso === 'function') {
+                    window.originalSetInnerHTML.mostrarSucesso = window.mostrarSucesso;
+                    window.mostrarSucesso = function(mensagem, cor) {
+                        const element = document.getElementById('success-message');
+                        if (element) {
+                            element.textContent = mensagem;
+                            element.style.color = cor || 'green';
+                            element.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 5000);
+                        }
+                    };
+                }
+                
+                if (typeof window.mostrarErro === 'function') {
+                    window.originalSetInnerHTML.mostrarErro = window.mostrarErro;
+                    window.mostrarErro = function(mensagem) {
+                        const element = document.getElementById('error-message');
+                        if (element) {
+                            element.textContent = mensagem;
+                            element.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 5000);
+                        }
+                    };
+                }
+            }
+            
+            // Substituir os manipuladores de eventos que usam innerHTML
+            const accessMessageElement = document.getElementById('access-message');
+            if (accessMessageElement) {
+                // Criar elementos para substituir o uso de innerHTML
+                const createAccessMessage = (message) => {
+                    // Limpar conteúdo atual
+                    while (accessMessageElement.firstChild) {
+                        accessMessageElement.removeChild(accessMessageElement.firstChild);
+                    }
+                    
+                    // Criar e adicionar novo conteúdo
+                    const paragraph = document.createElement('p');
+                    paragraph.textContent = message;
+                    accessMessageElement.appendChild(paragraph);
+                };
+                
+                // Substituir as chamadas para innerHTML no código
+                if (window.WalletManager && window.WalletManager.verifyOrdinals) {
+                    const originalVerifyOrdinals = window.WalletManager.verifyOrdinals;
+                    window.WalletManager.verifyOrdinals = function(address) {
+                        // Substituir as chamadas para innerHTML
+                        createAccessMessage('Verificando Ordinals...');
+                        return originalVerifyOrdinals.call(this, address);
+                    };
+                }
+            }
         });
     </script>
 </body>

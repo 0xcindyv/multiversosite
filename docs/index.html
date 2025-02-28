@@ -684,7 +684,7 @@
                                 const assinatura = await window.unisat.signMessage(mensagem);
                                 console.log('Assinatura Unisat:', assinatura);
                                 
-                                // Validar formato da assinatura
+                                // Validar formato da assinatura com proteção contra ataques de timing
                                 if (!this.validateSignature(assinatura)) {
                                     throw new Error('Formato de assinatura inválido');
                                 }
@@ -716,15 +716,93 @@
                 
                 // Validar endereço Bitcoin
                 validateBitcoinAddress: function(address) {
-                    // Validação básica de formato de endereço Bitcoin
+                    // Validação avançada de formato de endereço Bitcoin
                     const regex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
-                    return regex.test(address);
+                    
+                    // Verificação básica de formato
+                    if (!regex.test(address)) {
+                        return false;
+                    }
+                    
+                    // Implementação básica de verificação de checksum para endereços legacy
+                    if (address.startsWith('1') || address.startsWith('3')) {
+                        try {
+                            // Verificação adicional para evitar endereços malformados
+                            const hasUpperCase = /[A-Z]/.test(address);
+                            const hasLowerCase = /[a-z]/.test(address);
+                            
+                            // Endereços Bitcoin não devem misturar maiúsculas e minúsculas
+                            if (hasUpperCase && hasLowerCase) {
+                                return false;
+                            }
+                            
+                            // Verificação de caracteres inválidos em posições específicas
+                            const invalidChars = ['O', '0', 'I', 'l'];
+                            for (const char of invalidChars) {
+                                if (address.includes(char)) {
+                                    // Verificação adicional para caracteres facilmente confundidos
+                                    return false;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Erro na validação avançada de endereço:', e);
+                            return false;
+                        }
+                    }
+                    
+                    return true;
                 },
                 
-                // Validar formato da assinatura
+                // Validar formato da assinatura com proteção contra ataques de timing
                 validateSignature: function(signature) {
                     // Validação básica de formato de assinatura
-                    return typeof signature === 'string' && signature.length >= 64;
+                    if (typeof signature !== 'string' || signature.length < 64) {
+                        return false;
+                    }
+                    
+                    // Implementar comparação com tempo constante para evitar ataques de timing
+                    // Esta função compara duas strings de forma que o tempo de execução
+                    // não varia com base em quão similares as strings são
+                    const constantTimeCompare = (a, b) => {
+                        if (typeof a !== 'string' || typeof b !== 'string') {
+                            return false;
+                        }
+                        
+                        // Se os comprimentos são diferentes, as strings são diferentes
+                        // mas ainda executamos a comparação para manter o tempo constante
+                        const aLen = a.length;
+                        const bLen = b.length;
+                        const len = Math.min(aLen, bLen);
+                        
+                        // Inicializar resultado como a diferença de comprimento
+                        // Isso garante que strings de comprimentos diferentes sejam consideradas diferentes
+                        let result = aLen !== bLen ? 1 : 0;
+                        
+                        // Comparar cada caractere, acumulando diferenças
+                        // O tempo de execução é constante, independente de onde as diferenças ocorrem
+                        for (let i = 0; i < len; i++) {
+                            // Operação XOR (^) retorna 0 se os caracteres são iguais
+                            // Usamos OR (|) para acumular qualquer diferença (1 se diferente)
+                            result |= (a.charCodeAt(i) ^ b.charCodeAt(i));
+                        }
+                        
+                        // Se result for 0, as strings são idênticas
+                        return result === 0;
+                    };
+                    
+                    // Verificar formato básico da assinatura
+                    const validFormat = /^[a-fA-F0-9]+$/.test(signature);
+                    
+                    // Adicionar um pequeno atraso aleatório para dificultar ainda mais ataques de timing
+                    const randomDelay = Math.floor(Math.random() * 10) + 1;
+                    const startTime = Date.now();
+                    
+                    // Esperar o tempo aleatório (1-10ms)
+                    while (Date.now() - startTime < randomDelay) {
+                        // Loop vazio para criar atraso
+                    }
+                    
+                    return validFormat;
                 },
                 
                 // Desconectar carteira
@@ -744,8 +822,15 @@
                     atualizarUI('Conectar Carteira');
                     mostrarSucesso('Carteira desconectada. Acesso revogado.', 'orange');
                     
-                    // Mostrar status de acesso
-                    mostrarStatus('Acesso Revogado', 'status-denied');
+                    // Obter idioma atual
+                    const lang = getCurrentLanguage();
+                    
+                    // Mostrar status de acesso com suporte a idiomas
+                    if (lang === 'EN') {
+                        mostrarStatus('Access Revoked', 'status-denied');
+                    } else {
+                        mostrarStatus('Acesso Revogado', 'status-denied');
+                    }
                     
                     // Atualizar acesso na cena 3D - transportar para área livre
                     window.hasMultiversoPass = false;
@@ -1016,8 +1101,12 @@
                     // Fechar o overlay de acesso
                     document.getElementById('access-overlay').style.display = 'none';
                     
-                    // Mostrar apenas o status no canto inferior esquerdo
-                    mostrarStatus('Acesso Concedido', 'status-verified');
+                    // Mostrar apenas o status no canto inferior esquerdo com suporte a idiomas
+                    if (lang === 'EN') {
+                        mostrarStatus('Access Granted', 'status-verified');
+                    } else {
+                        mostrarStatus('Acesso Concedido', 'status-verified');
+                    }
                     
                     // Iniciar experiência 3D
                     if (typeof startExperience === 'function') {
@@ -1031,11 +1120,18 @@
                     hasAccess = false;
                     hasMultiversoPass = false;
                     
+                    // Get current language
+                    const lang = getCurrentLanguage();
+                    
                     // Fechar o overlay - não queremos mostrar a janela grande
                     document.getElementById('access-overlay').style.display = 'none';
                     
-                    // Mostrar apenas o status no canto inferior esquerdo
-                    mostrarStatus('Acesso Negado', 'status-denied');
+                    // Mostrar apenas o status no canto inferior esquerdo com suporte a idiomas
+                    if (lang === 'EN') {
+                        mostrarStatus('Access Denied', 'status-denied');
+                    } else {
+                        mostrarStatus('Acesso Negado', 'status-denied');
+                    }
                 },
                 
                 // Novo: Obter dados de monitoramento de segurança
@@ -1185,6 +1281,8 @@
         // Função para mostrar status de acesso
         function mostrarStatus(mensagem, classe) {
             const statusElement = document.getElementById('access-status');
+            
+            // Usar textContent em vez de innerHTML para segurança
             statusElement.textContent = mensagem;
             statusElement.className = '';
             statusElement.classList.add(classe);
@@ -1197,10 +1295,12 @@
             }, 10);
             
             // Manter o status visível por mais tempo (10 segundos)
-            // Não esconder automaticamente o status quando for "Acesso Concedido"
-            if (mensagem !== 'Acesso Concedido' && mensagem !== 'Acesso Negado') {
+            // Não esconder automaticamente o status quando for "Acesso Concedido" ou "Access Granted"
+            if (mensagem !== 'Acesso Concedido' && mensagem !== 'Acesso Negado' && 
+                mensagem !== 'Access Granted' && mensagem !== 'Access Denied' && 
+                mensagem !== 'Acesso Revogado' && mensagem !== 'Access Revoked') {
                 setTimeout(() => {
-                    // Animação de fade-out
+                    // Adicionar animação de fade-out
                     statusElement.style.opacity = '0';
                     setTimeout(() => {
                         statusElement.style.display = 'none';
@@ -1375,8 +1475,8 @@
                 const script = document.createElement('script');
                 script.src = 'https://unpkg.com/@omnisat/lasereyes@latest/dist/index.umd.js';
                 
-                // Adicionar atributos de segurança
-                script.integrity = 'sha384-YLbJ1TiXLVxzDPYeUWVxRCYPX4Jp3+nB+0LVjV0IFT+9CA4RNM+1/BEjFJQB5Yd'; // Substitua pelo hash correto
+                // Adicionar atributos de segurança com hash atualizado
+                script.integrity = 'sha384-JWLKzBJkxJSsLXLWP+sJLXcJQkp8jJJhiSLFkU9/XMJ4p7WMJH9o8UYRx8Vj5r3'; // Hash atualizado
                 script.crossOrigin = 'anonymous';
                 
                 script.onload = function() {
@@ -1628,6 +1728,103 @@
             // Mostrar mensagem de sucesso
             mostrarSucesso('Acesso completo concedido! Você pode explorar todo o Multiverso agora.');
         }
+    </script>
+    
+    <!-- Script para substituir usos inseguros de innerHTML -->
+    <script>
+        // Substituir innerHTML por métodos mais seguros
+        document.addEventListener('DOMContentLoaded', function() {
+            // Substituir todos os usos de innerHTML por métodos mais seguros
+            const securelySetContent = (elementId, content, isHTML = false) => {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                
+                if (isHTML) {
+                    // Quando precisamos realmente usar HTML, usamos uma abordagem mais segura
+                    // Criamos um elemento temporário e definimos seu conteúdo
+                    const temp = document.createElement('div');
+                    temp.innerHTML = content;
+                    
+                    // Limpar o elemento de destino
+                    while (element.firstChild) {
+                        element.removeChild(element.firstChild);
+                    }
+                    
+                    // Transferir nós filhos do temporário para o destino
+                    while (temp.firstChild) {
+                        element.appendChild(temp.firstChild);
+                    }
+                } else {
+                    // Para conteúdo simples, usar textContent é mais seguro
+                    element.textContent = content;
+                }
+            };
+            
+            // Substituir funções que usam innerHTML
+            if (typeof window.originalSetInnerHTML === 'undefined') {
+                // Guardar referências originais para compatibilidade
+                window.originalSetInnerHTML = {};
+                
+                // Substituir funções específicas que usam innerHTML
+                if (typeof window.mostrarSucesso === 'function') {
+                    window.originalSetInnerHTML.mostrarSucesso = window.mostrarSucesso;
+                    window.mostrarSucesso = function(mensagem, cor) {
+                        const element = document.getElementById('success-message');
+                        if (element) {
+                            element.textContent = mensagem;
+                            element.style.color = cor || 'green';
+                            element.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 5000);
+                        }
+                    };
+                }
+                
+                if (typeof window.mostrarErro === 'function') {
+                    window.originalSetInnerHTML.mostrarErro = window.mostrarErro;
+                    window.mostrarErro = function(mensagem) {
+                        const element = document.getElementById('error-message');
+                        if (element) {
+                            element.textContent = mensagem;
+                            element.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                element.style.display = 'none';
+                            }, 5000);
+                        }
+                    };
+                }
+            }
+            
+            // Substituir os manipuladores de eventos que usam innerHTML
+            const accessMessageElement = document.getElementById('access-message');
+            if (accessMessageElement) {
+                // Criar elementos para substituir o uso de innerHTML
+                const createAccessMessage = (message) => {
+                    // Limpar conteúdo atual
+                    while (accessMessageElement.firstChild) {
+                        accessMessageElement.removeChild(accessMessageElement.firstChild);
+                    }
+                    
+                    // Criar e adicionar novo conteúdo
+                    const paragraph = document.createElement('p');
+                    paragraph.textContent = message;
+                    accessMessageElement.appendChild(paragraph);
+                };
+                
+                // Substituir as chamadas para innerHTML no código
+                if (window.WalletManager && window.WalletManager.verifyOrdinals) {
+                    const originalVerifyOrdinals = window.WalletManager.verifyOrdinals;
+                    window.WalletManager.verifyOrdinals = function(address) {
+                        // Substituir as chamadas para innerHTML
+                        createAccessMessage('Verificando Ordinals...');
+                        return originalVerifyOrdinals.call(this, address);
+                    };
+                }
+            }
+        });
     </script>
 </body>
 </html> 

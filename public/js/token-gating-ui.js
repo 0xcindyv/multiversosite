@@ -547,17 +547,79 @@ function showGatedContent() {
 }
 
 /**
+ * Criptografa dados sensíveis antes de armazenar
+ * @param {Object} data - Dados a serem criptografados
+ * @returns {string} - Dados criptografados
+ */
+function encryptData(data) {
+  try {
+    // Criar uma chave simples baseada no user agent e data
+    const simpleKey = navigator.userAgent.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 256;
+    
+    // Converter dados para string JSON
+    const jsonData = JSON.stringify(data);
+    
+    // Criptografia simples (XOR com a chave)
+    const encrypted = Array.from(jsonData).map(char => {
+      return String.fromCharCode(char.charCodeAt(0) ^ simpleKey);
+    }).join('');
+    
+    // Codificar em base64 para armazenamento seguro
+    return btoa(encrypted);
+  } catch (error) {
+    console.error('Erro ao criptografar dados:', error);
+    return JSON.stringify(data); // Fallback para JSON normal
+  }
+}
+
+/**
+ * Descriptografa dados do armazenamento
+ * @param {string} encryptedData - Dados criptografados
+ * @returns {Object|null} - Dados descriptografados ou null se falhar
+ */
+function decryptData(encryptedData) {
+  try {
+    // Criar a mesma chave simples
+    const simpleKey = navigator.userAgent.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 256;
+    
+    // Decodificar base64
+    const decoded = atob(encryptedData);
+    
+    // Descriptografar (XOR com a mesma chave)
+    const decrypted = Array.from(decoded).map(char => {
+      return String.fromCharCode(char.charCodeAt(0) ^ simpleKey);
+    }).join('');
+    
+    // Converter de volta para objeto
+    return JSON.parse(decrypted);
+  } catch (error) {
+    console.error('Erro ao descriptografar dados:', error);
+    try {
+      // Tentar interpretar como JSON normal (para compatibilidade)
+      return JSON.parse(encryptedData);
+    } catch (e) {
+      console.error('Falha ao processar dados armazenados:', e);
+      return null;
+    }
+  }
+}
+
+/**
  * Salva o estado da autenticação no localStorage
  */
 function saveAuthenticationState(isAuth) {
   try {
     if (isAuth) {
       const status = getVerificationStatus();
-      localStorage.setItem('ordinal_auth', JSON.stringify({
+      const authData = {
         authenticated: true,
         timestamp: Date.now(),
         ordinalId: status.ordinalFound
-      }));
+      };
+      
+      // Criptografar dados antes de armazenar
+      const encryptedData = encryptData(authData);
+      localStorage.setItem('ordinal_auth', encryptedData);
     } else {
       localStorage.removeItem('ordinal_auth');
     }
@@ -574,7 +636,10 @@ function checkPreviousAuthentication() {
     const storedAuth = localStorage.getItem('ordinal_auth');
     if (!storedAuth) return;
     
-    const authData = JSON.parse(storedAuth);
+    // Descriptografar dados armazenados
+    const authData = decryptData(storedAuth);
+    if (!authData) return;
+    
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;
     
@@ -598,6 +663,7 @@ function checkPreviousAuthentication() {
     }
   } catch (error) {
     console.error('Erro ao verificar autenticação prévia:', error);
+    // Em caso de erro, remover dados potencialmente corrompidos
     localStorage.removeItem('ordinal_auth');
   }
 } 
