@@ -807,6 +807,7 @@
                 
                 // Desconectar carteira
                 disconnect: function() {
+                    console.log('Executando função disconnect');
                     walletConnected = false;
                     walletAddresses = [];
                     walletSignature = null;
@@ -857,6 +858,7 @@
                 // Verificar Ordinals
                 verifyOrdinals: async function(address) {
                     try {
+                        console.log('Iniciando verificação de Ordinals para o endereço:', address);
                         mostrarStatus('Verificando Ordinals...', 'status-pending');
                         
                         // Registrar tentativa de verificação para monitoramento
@@ -877,61 +879,20 @@
                         let ordinalsValidos = [];
                         let verificacaoBemSucedida = false;
                         
-                        // Método 1: API Unisat com validação de resposta
-                        try {
-                            console.log('Tentando API Unisat...');
-                            const resposta = await fetch(`https://open-api.unisat.io/v1/address/${address}/inscriptions?start=0&limit=100`, {
-                                method: 'GET',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                }
-                            });
-                            
-                            if (resposta.ok) {
-                                const dados = await resposta.json();
-                                console.log('Ordinals encontrados via API Unisat:', dados);
-                                
-                                // Validação rigorosa da resposta
-                                if (dados && 
-                                    typeof dados === 'object' && 
-                                    dados.success === true && 
-                                    dados.data && 
-                                    Array.isArray(dados.data.inscriptions)) {
-                                    
-                                    const ordinals = dados.data.inscriptions;
-                                    
-                                    // Validar cada ordinal antes de filtrar
-                                    const validOrdinals = ordinals.filter(ordinal => 
-                                        ordinal && 
-                                        typeof ordinal === 'object' && 
-                                        typeof ordinal.id === 'string' &&
-                                        multiversoPassIds.includes(ordinal.id)
-                                    );
-                                    
-                                    if (validOrdinals.length > 0) {
-                                        console.log('Ordinals válidos encontrados via API Unisat:', validOrdinals);
-                                        ordinalsValidos = validOrdinals;
-                                        verificacaoBemSucedida = true;
-                                    }
-                                } else {
-                                    console.warn('Resposta da API Unisat em formato inválido:', dados);
-                                }
-                            } else {
-                                console.warn('API Unisat falhou com status:', resposta.status);
-                            }
-                        } catch (err) {
-                            console.warn('Erro ao usar API Unisat:', err);
-                        }
+                        // Para fins de teste, vamos verificar se o endereço está na lista de teste
+                        const enderecosTeste = [
+                            // Adicione aqui endereços de teste se necessário
+                        ];
                         
-                        // Continuar com os outros métodos se o primeiro falhar...
-                        // (Código para os outros métodos permanece similar, com validações adicionais)
-                        
-                        // Método 2: API Hiro (Ordinals Explorer)
-                        if (!verificacaoBemSucedida) {
+                        if (enderecosTeste.includes(address)) {
+                            console.log('Endereço de teste encontrado, concedendo acesso para testes');
+                            ordinalsValidos = [{id: 'teste-id', output: 'teste-output'}];
+                            verificacaoBemSucedida = true;
+                        } else {
+                            // Método 1: API Unisat com validação de resposta
                             try {
-                                console.log('Tentando API Hiro...');
-                                const resposta = await fetch(`https://api.hiro.so/ordinals/v1/inscriptions?address=${address}&limit=60`, {
+                                console.log('Tentando API Unisat...');
+                                const resposta = await fetch(`https://open-api.unisat.io/v1/address/${address}/inscriptions?start=0&limit=100`, {
                                     method: 'GET',
                                     headers: {
                                         'Content-Type': 'application/json',
@@ -941,117 +902,48 @@
                                 
                                 if (resposta.ok) {
                                     const dados = await resposta.json();
-                                    console.log('Ordinals encontrados via API Hiro:', dados);
+                                    console.log('Ordinals encontrados via API Unisat:', dados);
                                     
+                                    // Validação rigorosa da resposta
                                     if (dados && 
                                         typeof dados === 'object' && 
-                                        Array.isArray(dados.results)) {
+                                        dados.success === true && 
+                                        dados.data && 
+                                        Array.isArray(dados.data.inscriptions)) {
                                         
-                                        const ordinals = dados.results;
+                                        const ordinals = dados.data.inscriptions;
                                         
                                         // Validar cada ordinal antes de filtrar
-                                        const hiroValidos = ordinals.filter(ordinal => 
+                                        const validOrdinals = ordinals.filter(ordinal => 
                                             ordinal && 
                                             typeof ordinal === 'object' && 
                                             typeof ordinal.id === 'string' &&
                                             multiversoPassIds.includes(ordinal.id)
                                         );
                                         
-                                        if (hiroValidos.length > 0) {
-                                            console.log('Ordinals válidos encontrados via API Hiro:', hiroValidos);
-                                            ordinalsValidos = hiroValidos;
+                                        if (validOrdinals.length > 0) {
+                                            console.log('Ordinals válidos encontrados via API Unisat:', validOrdinals);
+                                            ordinalsValidos = validOrdinals;
                                             verificacaoBemSucedida = true;
                                         }
                                     } else {
-                                        console.warn('Resposta da API Hiro em formato inválido:', dados);
+                                        console.warn('Resposta da API Unisat em formato inválido:', dados);
                                     }
                                 } else {
-                                    console.warn('API Hiro falhou com status:', resposta.status);
+                                    console.warn('API Unisat falhou com status:', resposta.status);
                                 }
                             } catch (err) {
-                                console.warn('Erro ao usar API Hiro:', err);
-                            }
-                        }
-                        
-                        // Método 3: Extensão Unisat
-                        if (!verificacaoBemSucedida && typeof window.unisat !== 'undefined') {
-                            try {
-                                console.log('Tentando método via extensão Unisat...');
-                                
-                                if (typeof window.unisat.getInscriptions === 'function') {
-                                    const inscriptions = await window.unisat.getInscriptions();
-                                    console.log('Inscriptions obtidas via extensão Unisat:', inscriptions);
-                                    
-                                    if (Array.isArray(inscriptions)) {
-                                        const extensionValidos = inscriptions.filter(ordinal => 
-                                            ordinal && 
-                                            typeof ordinal === 'object' && 
-                                            typeof ordinal.inscriptionId === 'string' &&
-                                            multiversoPassIds.includes(ordinal.inscriptionId)
-                                        );
-                                        
-                                        if (extensionValidos.length > 0) {
-                                            console.log('Ordinals válidos encontrados via extensão:', extensionValidos);
-                                            ordinalsValidos = extensionValidos.map(o => ({id: o.inscriptionId, output: o.output}));
-                                            verificacaoBemSucedida = true;
-                                        }
-                                    }
-                                } else {
-                                    console.warn('unisat.getInscriptions não está disponível');
-                                }
-                            } catch (err) {
-                                console.warn('Erro ao usar extensão Unisat:', err);
-                            }
-                        }
-                        
-                        // Método 4: API OrdinalHub
-                        if (!verificacaoBemSucedida) {
-                            try {
-                                console.log('Tentando API OrdinalHub...');
-                                const resposta = await fetch(`https://ordinalhub.com/api/collection-holdings?address=${address}`, {
-                                    method: 'GET',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Accept': 'application/json'
-                                    }
-                                });
-                                
-                                if (resposta.ok) {
-                                    const dados = await resposta.json();
-                                    console.log('Dados obtidos via OrdinalHub:', dados);
-                                    
-                                    if (dados && 
-                                        typeof dados === 'object' && 
-                                        Array.isArray(dados.inscriptions)) {
-                                        
-                                        const hubValidos = dados.inscriptions.filter(ordinal => 
-                                            ordinal && 
-                                            typeof ordinal === 'object' && 
-                                            typeof ordinal.id === 'string' &&
-                                            multiversoPassIds.includes(ordinal.id)
-                                        );
-                                        
-                                        if (hubValidos.length > 0) {
-                                            console.log('Ordinals válidos encontrados via OrdinalHub:', hubValidos);
-                                            ordinalsValidos = hubValidos;
-                                            verificacaoBemSucedida = true;
-                                        }
-                                    } else {
-                                        console.warn('Resposta da API OrdinalHub em formato inválido:', dados);
-                                    }
-                                } else {
-                                    console.warn('API OrdinalHub falhou com status:', resposta.status);
-                                }
-                            } catch (err) {
-                                console.warn('Erro ao usar API OrdinalHub:', err);
+                                console.warn('Erro ao usar API Unisat:', err);
                             }
                         }
                         
                         // Verificar resultado final
                         if (verificacaoBemSucedida && ordinalsValidos.length > 0) {
+                            console.log('Verificação bem-sucedida, concedendo acesso');
                             this.grantAccess(ordinalsValidos, address);
                         } else {
                             // Verificação final falhou, negar acesso
+                            console.log('Verificação falhou, negando acesso');
                             this.denyAccess(address);
                             
                             // Get current language
@@ -1061,11 +953,47 @@
                             // Mostrar mensagem de erro mais detalhada
                             document.getElementById('loading-spinner').style.display = 'none';
                             document.getElementById('verify-btn').style.display = 'block';
-                            document.getElementById('access-message').innerHTML = 
-                                `${texts.noPassFound}<br><br>` +
-                                `${texts.verifyManually}<br>` +
-                                `<a href="https://unisat.io/address/${address}" target="_blank" rel="noopener noreferrer" style="color:#ff6600;">https://unisat.io/address/${address}</a><br><br>` +
-                                `${texts.contactSupport}`;
+                            
+                            // Usar método seguro para definir conteúdo HTML
+                            const accessMessage = document.getElementById('access-message');
+                            if (accessMessage) {
+                                // Limpar conteúdo atual
+                                while (accessMessage.firstChild) {
+                                    accessMessage.removeChild(accessMessage.firstChild);
+                                }
+                                
+                                // Adicionar texto principal
+                                const p1 = document.createElement('p');
+                                p1.textContent = texts.noPassFound;
+                                accessMessage.appendChild(p1);
+                                
+                                // Adicionar quebras de linha
+                                accessMessage.appendChild(document.createElement('br'));
+                                accessMessage.appendChild(document.createElement('br'));
+                                
+                                // Adicionar texto de verificação manual
+                                const p2 = document.createElement('p');
+                                p2.textContent = texts.verifyManually;
+                                accessMessage.appendChild(p2);
+                                
+                                // Adicionar link
+                                const link = document.createElement('a');
+                                link.href = `https://unisat.io/address/${address}`;
+                                link.target = '_blank';
+                                link.rel = 'noopener noreferrer';
+                                link.style.color = '#ff6600';
+                                link.textContent = `https://unisat.io/address/${address}`;
+                                accessMessage.appendChild(link);
+                                
+                                // Adicionar quebras de linha
+                                accessMessage.appendChild(document.createElement('br'));
+                                accessMessage.appendChild(document.createElement('br'));
+                                
+                                // Adicionar texto de suporte
+                                const p3 = document.createElement('p');
+                                p3.textContent = texts.contactSupport;
+                                accessMessage.appendChild(p3);
+                            }
                         }
                         
                     } catch (error) {
@@ -1078,13 +1006,63 @@
                         
                         document.getElementById('loading-spinner').style.display = 'none';
                         document.getElementById('verify-btn').style.display = 'block';
-                        document.getElementById('access-message').innerHTML = 
-                            `${texts.technicalError}<br><br>` +
-                            `${texts.errorDetails} ${error.message}<br><br>` +
-                            `${texts.youCan}<br>` +
-                            `${texts.checkManually} <a href="https://unisat.io/address/${address}" target="_blank" rel="noopener noreferrer" style="color:#ff6600;">unisat.io</a><br>` +
-                            `${texts.refreshPage}<br>` +
-                            `${texts.contactSupportIfOwner}`;
+                        
+                        // Usar método seguro para definir conteúdo HTML
+                        const accessMessage = document.getElementById('access-message');
+                        if (accessMessage) {
+                            // Limpar conteúdo atual
+                            while (accessMessage.firstChild) {
+                                accessMessage.removeChild(accessMessage.firstChild);
+                            }
+                            
+                            // Adicionar texto de erro técnico
+                            const p1 = document.createElement('p');
+                            p1.textContent = texts.technicalError;
+                            accessMessage.appendChild(p1);
+                            
+                            // Adicionar quebras de linha
+                            accessMessage.appendChild(document.createElement('br'));
+                            accessMessage.appendChild(document.createElement('br'));
+                            
+                            // Adicionar detalhes do erro
+                            const p2 = document.createElement('p');
+                            p2.textContent = `${texts.errorDetails} ${error.message}`;
+                            accessMessage.appendChild(p2);
+                            
+                            // Adicionar quebras de linha
+                            accessMessage.appendChild(document.createElement('br'));
+                            accessMessage.appendChild(document.createElement('br'));
+                            
+                            // Adicionar texto de opções
+                            const p3 = document.createElement('p');
+                            p3.textContent = texts.youCan;
+                            accessMessage.appendChild(p3);
+                            
+                            // Adicionar opção de verificação manual
+                            const p4 = document.createElement('p');
+                            p4.textContent = texts.checkManually + ' ';
+                            
+                            // Adicionar link
+                            const link = document.createElement('a');
+                            link.href = 'https://unisat.io/address/' + address;
+                            link.target = '_blank';
+                            link.rel = 'noopener noreferrer';
+                            link.style.color = '#ff6600';
+                            link.textContent = 'unisat.io';
+                            
+                            p4.appendChild(link);
+                            accessMessage.appendChild(p4);
+                            
+                            // Adicionar opção de atualizar página
+                            const p5 = document.createElement('p');
+                            p5.textContent = texts.refreshPage;
+                            accessMessage.appendChild(p5);
+                            
+                            // Adicionar opção de contatar suporte
+                            const p6 = document.createElement('p');
+                            p6.textContent = texts.contactSupportIfOwner;
+                            accessMessage.appendChild(p6);
+                        }
                     }
                 },
                 
@@ -1103,8 +1081,10 @@
                     
                     // Mostrar apenas o status no canto inferior esquerdo com suporte a idiomas
                     if (lang === 'EN') {
+                        console.log('Mostrando status de acesso concedido em inglês');
                         mostrarStatus('Access Granted', 'status-verified');
                     } else {
+                        console.log('Mostrando status de acesso concedido em português');
                         mostrarStatus('Acesso Concedido', 'status-verified');
                     }
                     
@@ -1128,8 +1108,10 @@
                     
                     // Mostrar apenas o status no canto inferior esquerdo com suporte a idiomas
                     if (lang === 'EN') {
+                        console.log('Mostrando status de acesso negado em inglês');
                         mostrarStatus('Access Denied', 'status-denied');
                     } else {
+                        console.log('Mostrando status de acesso negado em português');
                         mostrarStatus('Acesso Negado', 'status-denied');
                     }
                 },
@@ -1280,7 +1262,13 @@
         
         // Função para mostrar status de acesso
         function mostrarStatus(mensagem, classe) {
+            console.log('Mostrando status:', mensagem, classe);
             const statusElement = document.getElementById('access-status');
+            
+            if (!statusElement) {
+                console.error('Elemento access-status não encontrado!');
+                return;
+            }
             
             // Usar textContent em vez de innerHTML para segurança
             statusElement.textContent = mensagem;
@@ -1399,9 +1387,8 @@
             console.log('Desconectando carteira...');
             
             // Usar o WalletManager para desconectar com segurança
-            if (WalletManager.disconnect()) {
-                mostrarSucesso('Carteira desconectada com sucesso');
-            }
+            WalletManager.disconnect();
+            mostrarSucesso('Carteira desconectada com sucesso');
         }
         
         // Funções auxiliares
@@ -1651,17 +1638,34 @@
             });
             
             // Adicionar event listeners para os botões
-            document.getElementById('connect-btn').addEventListener('click', toggleWalletMenu);
-            document.getElementById('unisat-btn').addEventListener('click', function() {
+            document.getElementById('connect-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Botão de conexão clicado');
+                toggleWalletMenu();
+            });
+            
+            document.getElementById('unisat-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Botão Unisat clicado');
                 WalletManager.connectUnisat().then(success => {
                     if (success) {
+                        console.log('Conexão bem-sucedida');
                         atualizarUI('Carteira Conectada');
+                    } else {
+                        console.log('Falha na conexão');
                     }
                 }).catch(error => {
+                    console.error('Erro na conexão:', error);
                     mostrarErro(error.message);
                 });
             });
-            document.getElementById('disconnect-btn').addEventListener('click', desconectarCarteira);
+            
+            document.getElementById('disconnect-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Botão de desconexão clicado');
+                desconectarCarteira();
+            });
+            
             document.getElementById('close-overlay-btn').addEventListener('click', function() {
                 document.getElementById('access-overlay').style.display = 'none';
             });
