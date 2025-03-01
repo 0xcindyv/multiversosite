@@ -780,8 +780,8 @@ let mintButton;
 // Constantes para o player de vídeo da área exclusiva
 const HODLER_VIDEO_WIDTH = 800;
 const HODLER_VIDEO_HEIGHT = 500;
-// Posição atualizada para ficar acima do terreno lunar exclusivo
-const HODLER_VIDEO_POSITION = { x: 0, y: 3500, z: -20000 }; // Posicionado mais alto e mais distante para melhor visibilidade
+// Posição atualizada para ficar acima do terreno lunar exclusivo e mais próxima da câmera
+const HODLER_VIDEO_POSITION = { x: 0, y: 4000, z: -10000 }; // Posicionado mais alto e mais próximo para melhor visibilidade
 
 // Lista de vídeos disponíveis no Bunny
 const hodlerVideos = [
@@ -1754,25 +1754,37 @@ function animate() {
                             console.log('[DEBUG] Player ainda não visível, forçando atualização completa');
                             forceUpdateHodlerVideoPlayer();
                             
-                            // Garante que a câmera esteja olhando na direção certa
-                            if (camera && hodlerVideoPlayer) {
-                                // Obtém a posição do player (assumindo que é o primeiro objeto)
-                                const playerObj = hodlerVideoPlayer.children[0];
-                                if (playerObj) {
-                                    console.log('[DEBUG] Ajustando câmera para olhar para o player');
-                                    const playerPos = playerObj.position.clone();
-                                    // Calcula uma posição a partir da qual olhar para o player
-                                    camera.lookAt(playerPos);
-                                }
+                            // Verifica se o player DOM direto está visível
+                            const directPlayer = document.getElementById('direct-hodler-player');
+                            if (!directPlayer || directPlayer.style.display === 'none') {
+                                console.log('[DEBUG] Player DOM direto não visível, exibindo...');
+                                showDirectPlayer();
                             }
                         }
                     }, 500);
+                }
+                
+                // Verifica se o player está na cena CSS3D
+                if (hodlerVideoPlayer && !cssScene.children.includes(hodlerVideoPlayer)) {
+                    console.log('[DEBUG] Player não está na cena CSS3D, adicionando...');
+                    cssScene.add(hodlerVideoPlayer);
+                    
+                    // Força renderização
+                    if (cssRenderer && cssScene && camera) {
+                        cssRenderer.render(cssScene, camera);
+                    }
                 }
             } else if (hodlerVideoPlayer) {
                 // Se o usuário não tem acesso mas o player está visível, esconde-o
                 if (hodlerVideoPlayer.visible) {
                     console.log('[DEBUG] Escondendo player para usuário sem acesso');
                     hodlerVideoPlayer.visible = false;
+                }
+                
+                // Esconde também o player DOM direto
+                const directPlayer = document.getElementById('direct-hodler-player');
+                if (directPlayer && directPlayer.style.display !== 'none') {
+                    directPlayer.style.display = 'none';
                 }
             }
         }
@@ -2532,7 +2544,10 @@ function createHodlerVideoPlayer() {
         playerElement.style.overflow = 'hidden';
         playerElement.style.pointerEvents = 'auto'; // Importante: permite interação
         
-        // Título do player
+        // Adiciona um ID para facilitar a depuração
+        playerElement.id = 'hodler-video-player-element';
+        
+        // Título do player com animação pulsante para chamar atenção
         const titleElement = document.createElement('div');
         titleElement.textContent = '🎓 ÁREA EXCLUSIVA - AULAS BITCOIN 🎓';
         titleElement.style.backgroundColor = '#FF3366';
@@ -2541,6 +2556,19 @@ function createHodlerVideoPlayer() {
         titleElement.style.fontSize = '24px';
         titleElement.style.fontWeight = 'bold';
         titleElement.style.textAlign = 'center';
+        titleElement.style.animation = 'pulse 2s infinite';
+        
+        // Adiciona a animação de pulso ao CSS
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            @keyframes pulse {
+                0% { background-color: #FF3366; }
+                50% { background-color: #FF6699; }
+                100% { background-color: #FF3366; }
+            }
+        `;
+        document.head.appendChild(styleElement);
+        
         playerElement.appendChild(titleElement);
         
         // Container para o vídeo e controles
@@ -2580,6 +2608,7 @@ function createHodlerVideoPlayer() {
         prevButton.onclick = function() {
             currentVideoIndex = (currentVideoIndex - 1 + hodlerVideos.length) % hodlerVideos.length;
             iframe.src = hodlerVideos[currentVideoIndex].url;
+            videoTitle.textContent = hodlerVideos[currentVideoIndex].title;
         };
         controlsContainer.appendChild(prevButton);
         
@@ -2602,15 +2631,17 @@ function createHodlerVideoPlayer() {
         nextButton.onclick = function() {
             currentVideoIndex = (currentVideoIndex + 1) % hodlerVideos.length;
             iframe.src = hodlerVideos[currentVideoIndex].url;
+            videoTitle.textContent = hodlerVideos[currentVideoIndex].title;
         };
         controlsContainer.appendChild(nextButton);
         
         // Criar objeto CSS3D
         const playerObject = new CSS3DObject(playerElement);
         
-        // Posicionar o player
-        playerObject.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z);
-        playerObject.scale.set(1, 1, 1);
+        // Posicionar o player - ajustado para ser mais visível
+        // Posição mais alta e mais próxima da câmera inicial
+        playerObject.position.set(0, 4000, -10000);
+        playerObject.scale.set(1.5, 1.5, 1.5); // Aumentado para ser mais visível
         playerObject.name = 'hodlerVideoPlayerObject';
         
         // Adicionar ao grupo
