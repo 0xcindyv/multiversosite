@@ -781,7 +781,7 @@ let mintButton;
 const HODLER_VIDEO_WIDTH = 800;
 const HODLER_VIDEO_HEIGHT = 500;
 // Posição atualizada para ficar acima do terreno lunar exclusivo
-const HODLER_VIDEO_POSITION = { x: 0, y: 3000, z: -20000 }; // Posicionado mais alto e mais distante para melhor visibilidade
+const HODLER_VIDEO_POSITION = { x: 0, y: 3500, z: -20000 }; // Posicionado mais alto e mais distante para melhor visibilidade
 
 // Lista de vídeos disponíveis no Bunny
 const hodlerVideos = [
@@ -2450,7 +2450,7 @@ function createHodlerVideoPlayer() {
     playerElement.style.border = '20px solid #3366cc';
     playerElement.style.borderRadius = '15px';
     playerElement.style.overflow = 'hidden';
-    playerElement.style.pointerEvents = 'auto';
+    playerElement.style.pointerEvents = 'auto'; // Importante: permite interação com o player
     
     // Criar elemento DOM para o player (verso - clone do primeiro)
     const playerElementBack = playerElement.cloneNode(true);
@@ -2459,7 +2459,7 @@ function createHodlerVideoPlayer() {
     // Título do player (frente)
     const titleElement = document.createElement('div');
     titleElement.id = 'hodler-video-title';
-    titleElement.textContent = '🎓 ÁREA EXCLUSIVA - AULAS 🎓';
+    titleElement.textContent = '🎓 ÁREA EXCLUSIVA - AULAS BITCOIN 🎓';
     titleElement.style.backgroundColor = '#3366cc';
     titleElement.style.color = 'white';
     titleElement.style.padding = '15px';
@@ -2687,16 +2687,13 @@ function createHodlerVideoPlayer() {
     }
     animateHalo();
     
-    // Adiciona colisão para o player
-    const playerCollider = new THREE.Box3().setFromObject(playerGroup);
-    
     // Garantir que o player seja visível mesmo quando o usuário tem acesso
     const hasAccessBoolean = window.hasMultiversoPass === true || window.hasAccess === true;
     hodlerVideoPlayer.visible = hasAccessBoolean;
     console.log('Player de vídeo para hodlers inicializado. Visibilidade:', hasAccessBoolean);
     console.log('Status de acesso: window.hasMultiversoPass =', window.hasMultiversoPass, 'window.hasAccess =', window.hasAccess);
     
-    return { playerGroup, playerCollider };
+    return { playerGroup, playerObject, playerObjectBack, halo, haloBack };
 }
 
 // Função para trocar o vídeo atual
