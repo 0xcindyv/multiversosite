@@ -2112,9 +2112,23 @@ function updateExclusiveAccess(hasAccess) {
         if (!exclusiveVideoPlayer) {
             console.log('🔵 Criando player exclusivo pela primeira vez');
             exclusiveVideoPlayer = createExclusiveVideoPlayer();
-        } else if (exclusiveVideoPlayer.videoGroup) {
-            // Se já existe, garante que esteja visível
-            exclusiveVideoPlayer.videoGroup.visible = true;
+        } else {
+            // Se já existe, garante que todos os componentes estejam visíveis
+            console.log('🔵 Player exclusivo já existe, tornando-o visível');
+            
+            // Garantir que o grupo principal esteja visível
+            if (exclusiveVideoPlayer.videoGroup) {
+                exclusiveVideoPlayer.videoGroup.visible = true;
+                
+                // Verificar se ainda está na cena CSS3D, caso contrário, readicionar
+                if (!cssScene.children.includes(exclusiveVideoPlayer.videoGroup)) {
+                    console.log('🔴 Player exclusivo não encontrado na cena CSS3D! Readicionando...');
+                    cssScene.add(exclusiveVideoPlayer.videoGroup);
+                    
+                    // Força uma re-renderização imediata
+                    cssRenderer.render(cssScene, camera);
+                }
+            }
             
             // Garantir que todos os componentes visuais estejam visíveis
             if (exclusiveVideoPlayer.particles) {
@@ -2130,18 +2144,50 @@ function updateExclusiveAccess(hasAccess) {
                 exclusiveVideoPlayer.plane.visible = true;
             }
             
-            // Verificar se ainda está na cena CSS3D, caso contrário, readicionar
-            if (!cssScene.children.includes(exclusiveVideoPlayer.videoGroup)) {
-                console.log('🔴 Player exclusivo não encontrado na cena CSS3D! Readicionando...');
-                cssScene.add(exclusiveVideoPlayer.videoGroup);
-            }
-            
             // Garantir que a posição esteja correta
             if (exclusiveVideoPlayer.position) {
                 const pos = exclusiveVideoPlayer.position;
-                exclusiveVideoPlayer.videoObject.position.set(pos.x, pos.y, pos.z);
-                exclusiveVideoPlayer.videoObjectBack.position.set(pos.x, pos.y, pos.z - 1);
+                
+                // Atualizar posição do videoObject e videoObjectBack se existirem
+                if (exclusiveVideoPlayer.videoObject) {
+                    exclusiveVideoPlayer.videoObject.position.set(pos.x, pos.y, pos.z);
+                }
+                if (exclusiveVideoPlayer.videoObjectBack) {
+                    exclusiveVideoPlayer.videoObjectBack.position.set(pos.x, pos.y, pos.z - 1);
+                }
+                
+                // Verificar e atualizar as posições dos elementos visuais
+                if (exclusiveVideoPlayer.marker) {
+                    exclusiveVideoPlayer.marker.position.set(pos.x, pos.y + 300, pos.z);
+                }
+                if (exclusiveVideoPlayer.plane) {
+                    exclusiveVideoPlayer.plane.position.set(pos.x, pos.y, pos.z + 10);
+                }
+                if (exclusiveVideoPlayer.halo) {
+                    exclusiveVideoPlayer.halo.position.set(pos.x, pos.y, pos.z - 50);
+                }
+                
                 console.log('🔵 Posição do player exclusivo reajustada para:', pos.x, pos.y, pos.z);
+            }
+            
+            // Verificar os elementos DOM
+            if (exclusiveVideoPlayer.domElements) {
+                const { front, back } = exclusiveVideoPlayer.domElements;
+                
+                // Garantir que os elementos DOM ainda existam
+                if (!document.body.contains(front)) {
+                    console.log('🔴 Elemento DOM frontal não encontrado, readicionando...');
+                    document.body.appendChild(front);
+                    front.style.position = 'absolute';
+                    front.style.left = '-9999px';
+                }
+                
+                if (!document.body.contains(back)) {
+                    console.log('🔴 Elemento DOM traseiro não encontrado, readicionando...');
+                    document.body.appendChild(back);
+                    back.style.position = 'absolute';
+                    back.style.left = '-9999px';
+                }
             }
             
             console.log('🔵 Player de vídeo exclusivo está visível para hodler');
@@ -2182,13 +2228,20 @@ function updateExclusiveAccess(hasAccess) {
         }
     }
     
+    // Força uma renderização para garantir que as mudanças sejam aplicadas imediatamente
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
+    if (cssRenderer && cssScene && camera) {
+        cssRenderer.render(cssScene, camera);
+    }
+    
     // Força uma atualização da posição da nave para aplicar as novas regras de colisão
     if (spaceship) {
         // Verificar se a nave está na área restrita e o acesso foi revogado
         const terrainLimit = 7000;
-        const isInRestrictedArea = spaceship.position.z < -terrainLimit;
         
-        if (!hasAccessBoolean && isInRestrictedArea) {
+        if (!hasAccessBoolean && spaceship.position.z < -terrainLimit) {
             console.log('Acesso revogado enquanto na área restrita. Teleportando para área segura...');
             // Teleportar a nave de volta para a área segura, próximo ao portal
             spaceship.position.set(0, 800, -terrainLimit + 500);
@@ -2512,6 +2565,10 @@ function createExclusiveVideoPlayer() {
     const EXCLUSIVE_VIDEO_WIDTH = 900;
     const EXCLUSIVE_VIDEO_HEIGHT = 500;
     
+    // Remover qualquer player existente para evitar duplicatas
+    document.querySelectorAll('.exclusive-video-player').forEach(el => el.remove());
+    document.querySelectorAll('[id^="exclusive-video-"]').forEach(el => el.remove());
+    
     // Criar elemento DOM para o player exclusivo (frente) - Abordagem simplificada
     const videoElement = document.createElement('div');
     videoElement.className = 'exclusive-video-player';
@@ -2523,6 +2580,7 @@ function createExclusiveVideoPlayer() {
     videoElement.style.overflow = 'hidden';
     videoElement.style.pointerEvents = 'auto';
     videoElement.style.boxShadow = '0 0 30px #9932CC'; // Adiciona um brilho roxo
+    videoElement.style.zIndex = '999'; // Garante que o elemento esteja em primeiro plano
     
     // Título do player exclusivo (frente)
     const titleElement = document.createElement('div');
@@ -2555,7 +2613,7 @@ function createExclusiveVideoPlayer() {
     iframe.style.border = 'none';
     
     // URL do Bunny com uma biblioteca de vídeos específica - usando URL padrão para garantir compatibilidade
-    iframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c';
+    iframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c?autoplay=true';
     iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
     iframe.allowFullscreen = true;
     
@@ -2570,20 +2628,30 @@ function createExclusiveVideoPlayer() {
     videoElement.id = videoId + '-front';
     videoElementBack.id = videoId + '-back';
     
+    // Adiciona elementos ao DOM antes de criar objetos 3D para garantir que estejam no documento
+    document.body.appendChild(videoElement);
+    document.body.appendChild(videoElementBack);
+    
+    // Esconder elementos do DOM visível (serão renderizados pelo CSS3D)
+    videoElement.style.position = 'absolute';
+    videoElement.style.left = '-9999px';
+    videoElementBack.style.position = 'absolute';
+    videoElementBack.style.left = '-9999px';
+    
     console.log('🔵 Elementos DOM criados com sucesso:', videoElement.id, videoElementBack.id);
     
-    // Definir cuidadosamente as coordenadas exatas - baseadas no terreno exclusivo
+    // POSIÇÃO AJUSTADA: Definir coordenadas exatas baseadas no terreno exclusivo
     // O terreno exclusivo está posicionado em z = -14500 (aproximadamente)
-    const terrainLimit = 7000; // O mesmo valor usado no terreno exclusivo
-    const playerZ = -terrainLimit - 9000; // Posição Z sobre o terreno exclusivo
-    const playerY = 1200; // Altura reduzida para maior visibilidade
+    const terrainLimit = 7000;
+    const playerZ = -16000; // Posição Z ajustada para melhor visualização
+    const playerY = 1200;   // Altura ajustada
     
     console.log('🔵 Posicionando player em coordenadas: X=0, Y=' + playerY + ', Z=' + playerZ);
     
     // Usar CSS3DObject para renderizar o elemento DOM no espaço 3D
     const videoObject = new CSS3DObject(videoElement);
     videoObject.position.set(0, playerY, playerZ); // Coordenadas precisas
-    videoObject.scale.set(1.5, 1.5, 1.5); // Escala reduzida para melhor visualização
+    videoObject.scale.set(1.5, 1.5, 1.5); // Escala ajustada
     
     const videoObjectBack = new CSS3DObject(videoElementBack);
     videoObjectBack.position.set(0, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
@@ -2592,13 +2660,15 @@ function createExclusiveVideoPlayer() {
     
     // Criar um grupo para manter os dois lados juntos
     const videoGroup = new THREE.Group();
+    // Adiciona nome exclusivo ao grupo para facilitar depuração
+    videoGroup.name = 'exclusive-video-group-' + Date.now();
     videoGroup.add(videoObject);
     videoGroup.add(videoObjectBack);
     
     // Adicionar explicitamente à cena CSS3D (crucialmente importante)
     cssScene.add(videoGroup);
     
-    console.log('🔵 Player adicionado à cena CSS3D. Group ID:', videoGroup.id);
+    console.log('🔵 Player adicionado à cena CSS3D. Group ID:', videoGroup.id, 'Group Name:', videoGroup.name);
     
     // Criar um grande marcador visual acima do player
     // Isso garante que mesmo que o CSS3D não funcione, algo será visível
@@ -2611,13 +2681,10 @@ function createExclusiveVideoPlayer() {
         emissiveIntensity: 1
     });
     
-    // Adicionar texto 3D para garantir visibilidade
-    const loaderText = new THREE.FontLoader();
-    const textGroup = new THREE.Group();
-    
     // Adicionar a esfera marcadora
     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
     marker.position.set(0, playerY + 300, playerZ); // Posicionado acima do player
+    marker.name = 'exclusive-video-marker';
     scene.add(marker);
     
     // Adicionar também um plano com textura como backup visual
@@ -2634,25 +2701,27 @@ function createExclusiveVideoPlayer() {
     plane.name = 'exclusive-video-backup-plane';
     scene.add(plane);
     
-    // Criar luzes para iluminar o player
-    const spotLight1 = new THREE.SpotLight(0x9932CC, 5); // Intensidade aumentada
+    // Criar luzes para iluminar o player - ILUMINAÇÃO INTENSIFICADA
+    const spotLight1 = new THREE.SpotLight(0x9932CC, 10); // Intensidade aumentada
     spotLight1.position.set(-200, playerY + 500, playerZ - 200);
     spotLight1.target.position.set(0, playerY, playerZ);
-    spotLight1.angle = Math.PI / 6;
+    spotLight1.angle = Math.PI / 4; // Ângulo mais amplo
     spotLight1.penumbra = 0.2;
+    spotLight1.distance = 3000; // Alcance aumentado
     scene.add(spotLight1);
     scene.add(spotLight1.target);
     
-    const spotLight2 = new THREE.SpotLight(0x9932CC, 5);
+    const spotLight2 = new THREE.SpotLight(0x9932CC, 10);
     spotLight2.position.set(200, playerY + 500, playerZ - 200);
     spotLight2.target.position.set(0, playerY, playerZ);
-    spotLight2.angle = Math.PI / 6;
+    spotLight2.angle = Math.PI / 4;
     spotLight2.penumbra = 0.2;
+    spotLight2.distance = 3000;
     scene.add(spotLight2);
     scene.add(spotLight2.target);
     
     // Adicionar partículas brilhantes ao redor do player
-    const particleCount = 300; // Mais partículas
+    const particleCount = 500; // Mais partículas
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     
@@ -2764,8 +2833,19 @@ function createExclusiveVideoPlayer() {
         const domElementBack = document.getElementById(videoId + '-back');
         if (!domElementFront || !domElementBack) {
             console.log('🔴 ALERTA: Elementos DOM do player foram removidos!');
+            
+            // Tentar recriar os elementos removidos
+            document.body.appendChild(videoElement);
+            document.body.appendChild(videoElementBack);
+            console.log('🔵 Elementos DOM recriados');
         }
-    }, 10000); // Verificar a cada 10 segundos
+        
+        // Força uma atualização do renderer CSS3D
+        if (cssRenderer) {
+            cssRenderer.render(cssScene, camera);
+            console.log('🔵 Forçando re-renderização CSS3D');
+        }
+    }, 5000); // Verificação mais frequente: a cada 5 segundos
     
     console.log('🔵 Player exclusivo criado com sucesso. Iniciando animações e monitoramento.');
     
@@ -2779,7 +2859,8 @@ function createExclusiveVideoPlayer() {
         halo,
         plane,
         debugInterval,
-        position: { x: 0, y: playerY, z: playerZ }
+        position: { x: 0, y: playerY, z: playerZ },
+        domElements: { front: videoElement, back: videoElementBack }
     };
 }
 
