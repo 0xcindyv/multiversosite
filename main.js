@@ -119,7 +119,7 @@ cssRenderer.setSize(window.innerWidth, window.innerHeight);
 cssRenderer.domElement.style.position = 'absolute';
 cssRenderer.domElement.style.top = '0';
 cssRenderer.domElement.style.left = '0';
-cssRenderer.domElement.style.pointerEvents = 'none';
+cssRenderer.domElement.style.pointerEvents = 'auto'; // Alterado de 'none' para 'auto' para permitir interação
 cssRenderer.domElement.style.zIndex = '2';
 cssRenderer.domElement.id = 'css-renderer';
 document.body.appendChild(cssRenderer.domElement);
@@ -831,7 +831,17 @@ function init() {
         
         spaceship = createSpaceship();
         createStreamScreen();
-        createHodlerVideoPlayer(); // Adiciona o player de vídeo para hodlers
+        
+        // Cria o player de vídeo para hodlers e garante a visibilidade correta
+        console.log('Criando player de vídeo para hodlers na inicialização');
+        createHodlerVideoPlayer();
+        
+        // Verifica novamente se o player foi criado e define sua visibilidade
+        if (hodlerVideoPlayer) {
+            hodlerVideoPlayer.visible = hasPass;
+            console.log('Visibilidade do player definida na inicialização:', hasPass);
+        }
+        
         const earth = createEarth();
         const sun = createSun();
         mysticalPortal = createMysticalPortal();
@@ -1656,6 +1666,13 @@ function animate() {
         if (!window.lastPassCheck || Date.now() - window.lastPassCheck > 5000) {
             window.lastPassCheck = Date.now();
             checkMultiversoPassStatus();
+            
+            // Verifica se o player de vídeo está visível quando deveria estar
+            const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
+            if (hasPass && hodlerVideoPlayer && !hodlerVideoPlayer.visible) {
+                console.log('Corrigindo visibilidade do player de vídeo');
+                hodlerVideoPlayer.visible = true;
+            }
         }
         
         // Não precisamos mais atualizar o botão Mint, pois ele agora é um elemento HTML fixo
@@ -2063,8 +2080,9 @@ function updateExclusiveAccess(hasAccess) {
             console.log('Player de vídeo para hodlers visível:', hodlerVideoPlayer.visible);
             
             // Se o acesso foi concedido e o player não estava visível antes, recria o player
-            if (hasAccessBoolean && !hodlerVideoPlayer.visible) {
-                console.log('Recriando player de vídeo para garantir visibilidade');
+            if (hasAccessBoolean) {
+                console.log('Acesso concedido, garantindo que o player esteja visível');
+                // Forçar a recriação do player para garantir que ele seja exibido corretamente
                 createHodlerVideoPlayer();
             }
         } else if (hasAccessBoolean) {
@@ -2392,8 +2410,11 @@ window.addEventListener('mousemove', checkMintButtonHover);
 
 // Função para criar o player de vídeo para hodlers
 function createHodlerVideoPlayer() {
+    console.log('Iniciando criação do player de vídeo para hodlers');
+    
     // Verificar se já existe um player
     if (hodlerVideoPlayer) {
+        console.log('Removendo player existente');
         cssScene.remove(hodlerVideoPlayer);
     }
     
@@ -2581,8 +2602,11 @@ function createHodlerVideoPlayer() {
     playerGroup.add(playerObject);
     playerGroup.add(playerObjectBack);
     
+    // Adiciona o grupo à cena CSS3D
     cssScene.add(playerGroup);
     hodlerVideoPlayer = playerGroup;
+    
+    console.log('Player adicionado à cena CSS3D:', playerGroup);
     
     // Adiciona luzes mais intensas para o player
     const spotLight1 = new THREE.SpotLight(0x3366cc, 5);
@@ -2644,13 +2668,10 @@ function createHodlerVideoPlayer() {
     const playerCollider = new THREE.Box3().setFromObject(playerGroup);
     
     // Garantir que o player seja visível mesmo quando o usuário tem acesso
-    if (window.hasMultiversoPass === true || window.hasAccess === true) {
-        hodlerVideoPlayer.visible = true;
-        console.log('Player de vídeo para hodlers inicializado e visível');
-    } else {
-        hodlerVideoPlayer.visible = false;
-        console.log('Player de vídeo para hodlers inicializado mas não visível (sem acesso)');
-    }
+    const hasAccessBoolean = window.hasMultiversoPass === true || window.hasAccess === true;
+    hodlerVideoPlayer.visible = hasAccessBoolean;
+    console.log('Player de vídeo para hodlers inicializado. Visibilidade:', hasAccessBoolean);
+    console.log('Status de acesso: window.hasMultiversoPass =', window.hasMultiversoPass, 'window.hasAccess =', window.hasAccess);
     
     return { playerGroup, playerCollider };
 }
