@@ -777,6 +777,24 @@ let portalMessageElement;
 // Adicionar variável global para o botão
 let mintButton;
 
+// Constantes para o player de vídeo da área exclusiva
+const HODLER_VIDEO_WIDTH = 800;
+const HODLER_VIDEO_HEIGHT = 500;
+const HODLER_VIDEO_POSITION = { x: 2000, y: 1500, z: -12000 }; // Posicionado na área exclusiva
+
+// Lista de vídeos disponíveis no Bunny
+const hodlerVideos = [
+    { id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', title: 'Aula 1: Introdução ao Bitcoin', url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false&loop=false&muted=false&preload=true' },
+    { id: 'video2', title: 'Aula 2: Blockchain e Consenso', url: 'https://iframe.mediadelivery.net/embed/249011/video2?autoplay=false&loop=false&muted=false&preload=true' },
+    { id: 'video3', title: 'Aula 3: Carteiras e Segurança', url: 'https://iframe.mediadelivery.net/embed/249011/video3?autoplay=false&loop=false&muted=false&preload=true' },
+    { id: 'video4', title: 'Aula 4: Mineração e Halving', url: 'https://iframe.mediadelivery.net/embed/249011/video4?autoplay=false&loop=false&muted=false&preload=true' },
+    { id: 'video5', title: 'Aula 5: Lightning Network', url: 'https://iframe.mediadelivery.net/embed/249011/video5?autoplay=false&loop=false&muted=false&preload=true' }
+];
+
+// Variável global para o player de vídeo
+let hodlerVideoPlayer;
+let currentVideoIndex = 0;
+
 function init() {
     try {
         // Limpa as cenas
@@ -812,6 +830,7 @@ function init() {
         
         spaceship = createSpaceship();
         createStreamScreen();
+        createHodlerVideoPlayer(); // Adiciona o player de vídeo para hodlers
         const earth = createEarth();
         const sun = createSun();
         mysticalPortal = createMysticalPortal();
@@ -2036,6 +2055,12 @@ function updateExclusiveAccess(hasAccess) {
         // Atualiza a visibilidade do terreno exclusivo
         exclusiveLunarTerrain.visible = hasAccessBoolean;
         console.log('Terreno exclusivo visível:', exclusiveLunarTerrain.visible);
+        
+        // Atualiza a visibilidade do player de vídeo para hodlers
+        if (hodlerVideoPlayer) {
+            hodlerVideoPlayer.visible = hasAccessBoolean;
+            console.log('Player de vídeo para hodlers visível:', hodlerVideoPlayer.visible);
+        }
     }
     
     // Atualiza a mensagem do portal se estiver visível
@@ -2370,4 +2395,268 @@ function checkMintButtonHover(event) {
 
 // Adicionar evento de movimento do mouse para verificar hover no botão
 window.addEventListener('mousemove', checkMintButtonHover);
+
+// Função para criar o player de vídeo para hodlers
+function createHodlerVideoPlayer() {
+    // Verificar se já existe um player
+    if (hodlerVideoPlayer) {
+        cssScene.remove(hodlerVideoPlayer);
+    }
+    
+    // Criar elemento DOM para o player (frente)
+    const playerElement = document.createElement('div');
+    playerElement.id = 'hodler-video-player';
+    playerElement.style.width = HODLER_VIDEO_WIDTH + 'px';
+    playerElement.style.height = HODLER_VIDEO_HEIGHT + 'px';
+    playerElement.style.backgroundColor = '#000000';
+    playerElement.style.border = '20px solid #3366cc';
+    playerElement.style.borderRadius = '15px';
+    playerElement.style.overflow = 'hidden';
+    playerElement.style.pointerEvents = 'auto';
+    
+    // Criar elemento DOM para o player (verso - clone do primeiro)
+    const playerElementBack = playerElement.cloneNode(true);
+    playerElementBack.id = 'hodler-video-player-back';
+    
+    // Título do player (frente)
+    const titleElement = document.createElement('div');
+    titleElement.id = 'hodler-video-title';
+    titleElement.textContent = '🎓 ÁREA EXCLUSIVA - AULAS 🎓';
+    titleElement.style.backgroundColor = '#3366cc';
+    titleElement.style.color = 'white';
+    titleElement.style.padding = '15px';
+    titleElement.style.fontSize = '24px';
+    titleElement.style.fontWeight = 'bold';
+    titleElement.style.textAlign = 'center';
+    playerElement.appendChild(titleElement);
+    
+    // Título do player (verso)
+    const titleElementBack = titleElement.cloneNode(true);
+    titleElementBack.id = 'hodler-video-title-back';
+    playerElementBack.appendChild(titleElementBack);
+    
+    // Container para o vídeo atual (frente)
+    const videoContainer = document.createElement('div');
+    videoContainer.id = 'hodler-video-container';
+    videoContainer.style.width = '100%';
+    videoContainer.style.height = (HODLER_VIDEO_HEIGHT - 170) + 'px'; // Altura ajustada para acomodar controles
+    videoContainer.style.backgroundColor = '#000';
+    videoContainer.style.position = 'relative';
+    playerElement.appendChild(videoContainer);
+    
+    // Container para o vídeo atual (verso)
+    const videoContainerBack = videoContainer.cloneNode(true);
+    videoContainerBack.id = 'hodler-video-container-back';
+    playerElementBack.appendChild(videoContainerBack);
+    
+    // Wrapper responsivo para o iframe (frente)
+    const responsiveWrapper = document.createElement('div');
+    responsiveWrapper.style.position = 'relative';
+    responsiveWrapper.style.paddingTop = '56.25%'; // 16:9 aspect ratio
+    responsiveWrapper.style.width = '100%';
+    responsiveWrapper.style.height = '100%';
+    videoContainer.appendChild(responsiveWrapper);
+    
+    // Wrapper responsivo para o iframe (verso)
+    const responsiveWrapperBack = responsiveWrapper.cloneNode(true);
+    videoContainerBack.appendChild(responsiveWrapperBack);
+    
+    // Iframe do vídeo atual (frente)
+    const iframe = document.createElement('iframe');
+    iframe.id = 'hodler-video-iframe';
+    iframe.style.border = 'none';
+    iframe.style.position = 'absolute';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.src = hodlerVideos[currentVideoIndex].url;
+    iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+    iframe.allowFullscreen = true;
+    iframe.loading = 'lazy';
+    responsiveWrapper.appendChild(iframe);
+    
+    // Iframe do vídeo atual (verso)
+    const iframeBack = iframe.cloneNode(true);
+    iframeBack.id = 'hodler-video-iframe-back';
+    responsiveWrapperBack.appendChild(iframeBack);
+    
+    // Container para a lista de vídeos (frente)
+    const listContainer = document.createElement('div');
+    listContainer.id = 'hodler-video-list-container';
+    listContainer.style.width = '100%';
+    listContainer.style.height = '100px';
+    listContainer.style.backgroundColor = '#222';
+    listContainer.style.overflowX = 'auto';
+    listContainer.style.overflowY = 'hidden';
+    listContainer.style.whiteSpace = 'nowrap';
+    listContainer.style.padding = '10px 0';
+    listContainer.style.display = 'flex';
+    listContainer.style.alignItems = 'center';
+    playerElement.appendChild(listContainer);
+    
+    // Container para a lista de vídeos (verso)
+    const listContainerBack = listContainer.cloneNode(true);
+    listContainerBack.id = 'hodler-video-list-container-back';
+    playerElementBack.appendChild(listContainerBack);
+    
+    // Adicionar miniaturas de vídeos à lista (frente)
+    hodlerVideos.forEach((video, index) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'hodler-video-thumbnail';
+        thumbnail.style.display = 'inline-block';
+        thumbnail.style.minWidth = '160px';
+        thumbnail.style.height = '90px';
+        thumbnail.style.margin = '0 5px';
+        thumbnail.style.backgroundColor = index === currentVideoIndex ? '#3366cc' : '#444';
+        thumbnail.style.color = 'white';
+        thumbnail.style.textAlign = 'center';
+        thumbnail.style.cursor = 'pointer';
+        thumbnail.style.borderRadius = '5px';
+        thumbnail.style.overflow = 'hidden';
+        thumbnail.style.fontSize = '14px';
+        thumbnail.style.fontWeight = 'bold';
+        thumbnail.style.textOverflow = 'ellipsis';
+        thumbnail.style.whiteSpace = 'normal';
+        thumbnail.style.display = 'inline-flex';
+        thumbnail.style.alignItems = 'center';
+        thumbnail.style.justifyContent = 'center';
+        thumbnail.style.padding = '0 10px';
+        thumbnail.style.flexShrink = '0';
+        thumbnail.textContent = video.title;
+        thumbnail.dataset.index = index;
+        
+        thumbnail.addEventListener('click', function() {
+            changeHodlerVideo(parseInt(this.dataset.index));
+        });
+        
+        listContainer.appendChild(thumbnail);
+    });
+    
+    // Adicionar miniaturas de vídeos à lista (verso)
+    hodlerVideos.forEach((video, index) => {
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'hodler-video-thumbnail';
+        thumbnail.style.display = 'inline-block';
+        thumbnail.style.minWidth = '160px';
+        thumbnail.style.height = '90px';
+        thumbnail.style.margin = '0 5px';
+        thumbnail.style.backgroundColor = index === currentVideoIndex ? '#3366cc' : '#444';
+        thumbnail.style.color = 'white';
+        thumbnail.style.textAlign = 'center';
+        thumbnail.style.cursor = 'pointer';
+        thumbnail.style.borderRadius = '5px';
+        thumbnail.style.overflow = 'hidden';
+        thumbnail.style.fontSize = '14px';
+        thumbnail.style.fontWeight = 'bold';
+        thumbnail.style.textOverflow = 'ellipsis';
+        thumbnail.style.whiteSpace = 'normal';
+        thumbnail.style.display = 'inline-flex';
+        thumbnail.style.alignItems = 'center';
+        thumbnail.style.justifyContent = 'center';
+        thumbnail.style.padding = '0 10px';
+        thumbnail.style.flexShrink = '0';
+        thumbnail.textContent = video.title;
+        thumbnail.dataset.index = index;
+        
+        thumbnail.addEventListener('click', function() {
+            changeHodlerVideo(parseInt(this.dataset.index));
+        });
+        
+        listContainerBack.appendChild(thumbnail);
+    });
+    
+    // Criar grupo para conter os dois lados do player
+    const playerGroup = new THREE.Group();
+    
+    // Criar objeto CSS3D para frente
+    const playerObject = new CSS3DObject(playerElement);
+    playerObject.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z);
+    playerObject.scale.set(3, 3, 3);
+    
+    // Criar objeto CSS3D para verso (igual à frente)
+    const playerObjectBack = new CSS3DObject(playerElementBack);
+    playerObjectBack.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z - 1); // Posição ligeiramente atrás
+    playerObjectBack.scale.set(3, 3, 3);
+    playerObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
+    
+    // Adiciona os dois lados ao grupo
+    playerGroup.add(playerObject);
+    playerGroup.add(playerObjectBack);
+    
+    cssScene.add(playerGroup);
+    hodlerVideoPlayer = playerGroup;
+    
+    // Adiciona luzes para o player
+    const spotLight1 = new THREE.SpotLight(0x3366cc, 2);
+    spotLight1.position.set(HODLER_VIDEO_POSITION.x - 400, HODLER_VIDEO_POSITION.y + 100, HODLER_VIDEO_POSITION.z + 100);
+    spotLight1.target.position.copy(playerObject.position);
+    scene.add(spotLight1);
+    scene.add(spotLight1.target);
+    
+    const spotLight2 = new THREE.SpotLight(0x3366cc, 2);
+    spotLight2.position.set(HODLER_VIDEO_POSITION.x + 400, HODLER_VIDEO_POSITION.y + 100, HODLER_VIDEO_POSITION.z + 100);
+    spotLight2.target.position.copy(playerObject.position);
+    scene.add(spotLight2);
+    scene.add(spotLight2.target);
+    
+    // Adiciona um halo ao redor do player
+    const haloGeometry = new THREE.PlaneGeometry(HODLER_VIDEO_WIDTH * 3.3, HODLER_VIDEO_HEIGHT * 3.3);
+    const haloMaterial = new THREE.MeshBasicMaterial({
+        color: 0x3366cc,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+    });
+    
+    // Cria halos para ambos os lados
+    const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+    const haloBack = new THREE.Mesh(haloGeometry, haloMaterial.clone());
+    
+    halo.position.copy(playerObject.position);
+    halo.position.z += 1;
+    haloBack.position.copy(playerObjectBack.position);
+    haloBack.position.z -= 1;
+    haloBack.rotation.y = Math.PI;
+    haloBack.scale.x = -1; // Espelha o halo traseiro também
+    
+    scene.add(halo);
+    scene.add(haloBack);
+    
+    // Animar os halos
+    function animateHalo() {
+        requestAnimationFrame(animateHalo);
+        const opacity = 0.3 + Math.sin(Date.now() * 0.003) * 0.2;
+        halo.material.opacity = opacity;
+        haloBack.material.opacity = opacity;
+    }
+    animateHalo();
+    
+    // Adiciona colisão para o player
+    const playerCollider = new THREE.Box3().setFromObject(playerGroup);
+    
+    return { playerGroup, playerCollider };
+}
+
+// Função para trocar o vídeo atual
+function changeHodlerVideo(index) {
+    if (index < 0 || index >= hodlerVideos.length) return;
+    
+    currentVideoIndex = index;
+    
+    // Atualizar iframe com o novo vídeo
+    const iframe = document.getElementById('hodler-video-iframe');
+    const iframeBack = document.getElementById('hodler-video-iframe-back');
+    
+    if (iframe && iframeBack) {
+        iframe.src = hodlerVideos[index].url;
+        iframeBack.src = hodlerVideos[index].url;
+        
+        // Atualizar destaque nas miniaturas
+        const thumbnails = document.querySelectorAll('.hodler-video-thumbnail');
+        thumbnails.forEach((thumbnail, i) => {
+            thumbnail.style.backgroundColor = i === index ? '#3366cc' : '#444';
+        });
+    }
+}
 
