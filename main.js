@@ -798,6 +798,7 @@ let currentVideoIndex = 0;
 
 function init() {
     try {
+        console.log('Iniciando inicialização da cena');
         // Limpa as cenas
         while(scene.children.length > 0) { 
             scene.remove(scene.children[0]); 
@@ -818,6 +819,7 @@ function init() {
         scene.add(directionalLight);
 
         // Cria elementos na ordem correta
+        console.log('Criando elementos da cena...');
         createStars();
         lunarTerrain = createLunarTerrain();
         exclusiveLunarTerrain = createExclusiveLunarTerrain();
@@ -840,6 +842,8 @@ function init() {
         if (hodlerVideoPlayer) {
             hodlerVideoPlayer.visible = hasPass;
             console.log('Visibilidade do player definida na inicialização:', hasPass);
+        } else {
+            console.error('Falha ao criar o player de vídeo na inicialização');
         }
         
         const earth = createEarth();
@@ -866,15 +870,30 @@ function init() {
         controls.acceleration = 5; // Reduz aceleração
         controls.deceleration = 5; // Aumenta desaceleração
         
+        // Força uma renderização inicial para garantir que tudo seja exibido corretamente
+        renderer.render(scene, camera);
+        cssRenderer.render(cssScene, camera);
+        
+        console.log('Inicialização da cena concluída com sucesso');
+        
+        // Agenda uma verificação adicional do player após um curto atraso
+        setTimeout(function() {
+            if (hasPass && (!hodlerVideoPlayer || !hodlerVideoPlayer.visible)) {
+                console.log('Verificação adicional: player não está visível, forçando atualização...');
+                forceUpdateHodlerVideoPlayer();
+            }
+        }, 1000);
+        
         // Inicia o loop de animação
         animate();
-
+        
         // Verifica acesso inicial
         // Importante: Usa a função updateExclusiveAccess para garantir consistência
         console.log('Verificando acesso inicial. Status do Multiverso Pass:', hasPass);
         updateExclusiveAccess(hasPass);
+        
     } catch (error) {
-        console.error("Error initializing scene:", error);
+        console.error('Erro durante a inicialização:', error);
     }
 }
 
@@ -2606,6 +2625,7 @@ function createHodlerVideoPlayer() {
     
     // Criar grupo para conter os dois lados do player
     const playerGroup = new THREE.Group();
+    playerGroup.name = 'hodlerVideoPlayerGroup'; // Nome para facilitar depuração
     
     // Criar objeto CSS3D para frente
     const playerObject = new CSS3DObject(playerElement);
@@ -2613,6 +2633,7 @@ function createHodlerVideoPlayer() {
     playerObject.scale.set(3, 3, 3);
     // Rotacionar para ficar paralelo ao terreno
     playerObject.rotation.x = Math.PI / 8; // Inclinação leve para melhor visualização
+    playerObject.name = 'hodlerVideoPlayerFront'; // Nome para facilitar depuração
     
     // Criar objeto CSS3D para verso (igual à frente)
     const playerObjectBack = new CSS3DObject(playerElementBack);
@@ -2620,6 +2641,7 @@ function createHodlerVideoPlayer() {
     playerObjectBack.scale.set(3, 3, 3);
     playerObjectBack.rotation.x = Math.PI / 8; // Mesma inclinação que a frente
     playerObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
+    playerObjectBack.name = 'hodlerVideoPlayerBack'; // Nome para facilitar depuração
     
     // Adiciona os dois lados ao grupo
     playerGroup.add(playerObject);
@@ -2692,6 +2714,12 @@ function createHodlerVideoPlayer() {
     hodlerVideoPlayer.visible = hasAccessBoolean;
     console.log('Player de vídeo para hodlers inicializado. Visibilidade:', hasAccessBoolean);
     console.log('Status de acesso: window.hasMultiversoPass =', window.hasMultiversoPass, 'window.hasAccess =', window.hasAccess);
+    
+    // Força uma renderização imediata para garantir que o player seja exibido
+    if (cssRenderer && cssScene && camera) {
+        cssRenderer.render(cssScene, camera);
+        console.log('Renderização forçada da cena CSS3D após criar o player');
+    }
     
     return { playerGroup, playerObject, playerObjectBack, halo, haloBack };
 }
