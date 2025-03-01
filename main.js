@@ -780,7 +780,8 @@ let mintButton;
 // Constantes para o player de vídeo da área exclusiva
 const HODLER_VIDEO_WIDTH = 800;
 const HODLER_VIDEO_HEIGHT = 500;
-const HODLER_VIDEO_POSITION = { x: 2000, y: 1500, z: -12000 }; // Posicionado na área exclusiva
+// Posição atualizada para ficar acima do terreno lunar exclusivo
+const HODLER_VIDEO_POSITION = { x: 0, y: 2000, z: -17000 }; // Posicionado acima do terreno exclusivo
 
 // Lista de vídeos disponíveis no Bunny
 const hodlerVideos = [
@@ -2060,6 +2061,16 @@ function updateExclusiveAccess(hasAccess) {
         if (hodlerVideoPlayer) {
             hodlerVideoPlayer.visible = hasAccessBoolean;
             console.log('Player de vídeo para hodlers visível:', hodlerVideoPlayer.visible);
+            
+            // Se o acesso foi concedido e o player não estava visível antes, recria o player
+            if (hasAccessBoolean && !hodlerVideoPlayer.visible) {
+                console.log('Recriando player de vídeo para garantir visibilidade');
+                createHodlerVideoPlayer();
+            }
+        } else if (hasAccessBoolean) {
+            // Se o player não existe mas o usuário tem acesso, cria o player
+            console.log('Criando player de vídeo para hodlers (não existia antes)');
+            createHodlerVideoPlayer();
         }
     }
     
@@ -2085,28 +2096,11 @@ function updateExclusiveAccess(hasAccess) {
         if (!hasAccessBoolean && isInRestrictedArea) {
             console.log('Acesso revogado enquanto na área restrita. Teleportando para área segura...');
             // Teleportar a nave de volta para a área segura, próximo ao portal
-            spaceship.position.set(0, 800, -terrainLimit + 500);
+            spaceship.position.set(0, 800, 0);
+            camera.position.set(0, 1000, 1200);
             
             // Mostrar mensagem de aviso
-            const statusMsg = document.createElement('div');
-            statusMsg.style.position = 'fixed';
-            statusMsg.style.top = '50%';
-            statusMsg.style.left = '50%';
-            statusMsg.style.transform = 'translate(-50%, -50%)';
-            statusMsg.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-            statusMsg.style.color = '#ff0000';
-            statusMsg.style.padding = '20px';
-            statusMsg.style.borderRadius = '10px';
-            statusMsg.style.fontFamily = 'Arial';
-            statusMsg.style.fontSize = '24px';
-            statusMsg.style.zIndex = '1000';
-            statusMsg.innerHTML = '⚠️ Acesso revogado! Você foi teleportado para a área segura.';
-            document.body.appendChild(statusMsg);
-            
-            // Remove a mensagem após 5 segundos
-            setTimeout(() => {
-                document.body.removeChild(statusMsg);
-            }, 5000);
+            showWarningMessage('Acesso revogado! Você foi teleportado para a área segura.');
         } else {
             // Aplica as novas regras de colisão imediatamente
             const collisionResult = checkTerrainCollision(spaceship.position.clone());
@@ -2573,11 +2567,14 @@ function createHodlerVideoPlayer() {
     const playerObject = new CSS3DObject(playerElement);
     playerObject.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z);
     playerObject.scale.set(3, 3, 3);
+    // Rotacionar para ficar paralelo ao terreno
+    playerObject.rotation.x = Math.PI / 8; // Inclinação leve para melhor visualização
     
     // Criar objeto CSS3D para verso (igual à frente)
     const playerObjectBack = new CSS3DObject(playerElementBack);
     playerObjectBack.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z - 1); // Posição ligeiramente atrás
     playerObjectBack.scale.set(3, 3, 3);
+    playerObjectBack.rotation.x = Math.PI / 8; // Mesma inclinação que a frente
     playerObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
     
     // Adiciona os dois lados ao grupo
@@ -2587,25 +2584,33 @@ function createHodlerVideoPlayer() {
     cssScene.add(playerGroup);
     hodlerVideoPlayer = playerGroup;
     
-    // Adiciona luzes para o player
-    const spotLight1 = new THREE.SpotLight(0x3366cc, 2);
-    spotLight1.position.set(HODLER_VIDEO_POSITION.x - 400, HODLER_VIDEO_POSITION.y + 100, HODLER_VIDEO_POSITION.z + 100);
+    // Adiciona luzes mais intensas para o player
+    const spotLight1 = new THREE.SpotLight(0x3366cc, 5);
+    spotLight1.position.set(HODLER_VIDEO_POSITION.x - 400, HODLER_VIDEO_POSITION.y + 500, HODLER_VIDEO_POSITION.z + 500);
     spotLight1.target.position.copy(playerObject.position);
+    spotLight1.angle = Math.PI / 6;
+    spotLight1.penumbra = 0.2;
+    spotLight1.decay = 1;
+    spotLight1.distance = 5000;
     scene.add(spotLight1);
     scene.add(spotLight1.target);
     
-    const spotLight2 = new THREE.SpotLight(0x3366cc, 2);
-    spotLight2.position.set(HODLER_VIDEO_POSITION.x + 400, HODLER_VIDEO_POSITION.y + 100, HODLER_VIDEO_POSITION.z + 100);
+    const spotLight2 = new THREE.SpotLight(0x3366cc, 5);
+    spotLight2.position.set(HODLER_VIDEO_POSITION.x + 400, HODLER_VIDEO_POSITION.y + 500, HODLER_VIDEO_POSITION.z + 500);
     spotLight2.target.position.copy(playerObject.position);
+    spotLight2.angle = Math.PI / 6;
+    spotLight2.penumbra = 0.2;
+    spotLight2.decay = 1;
+    spotLight2.distance = 5000;
     scene.add(spotLight2);
     scene.add(spotLight2.target);
     
     // Adiciona um halo ao redor do player
-    const haloGeometry = new THREE.PlaneGeometry(HODLER_VIDEO_WIDTH * 3.3, HODLER_VIDEO_HEIGHT * 3.3);
+    const haloGeometry = new THREE.PlaneGeometry(HODLER_VIDEO_WIDTH * 3.5, HODLER_VIDEO_HEIGHT * 3.5);
     const haloMaterial = new THREE.MeshBasicMaterial({
         color: 0x3366cc,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.4,
         side: THREE.DoubleSide
     });
     
@@ -2614,19 +2619,22 @@ function createHodlerVideoPlayer() {
     const haloBack = new THREE.Mesh(haloGeometry, haloMaterial.clone());
     
     halo.position.copy(playerObject.position);
-    halo.position.z += 1;
+    halo.position.z += 10;
+    halo.rotation.x = Math.PI / 8; // Mesma inclinação que o player
+    
     haloBack.position.copy(playerObjectBack.position);
-    haloBack.position.z -= 1;
+    haloBack.position.z -= 10;
+    haloBack.rotation.x = Math.PI / 8; // Mesma inclinação
     haloBack.rotation.y = Math.PI;
     haloBack.scale.x = -1; // Espelha o halo traseiro também
     
     scene.add(halo);
     scene.add(haloBack);
     
-    // Animar os halos
+    // Animar os halos com efeito pulsante mais visível
     function animateHalo() {
         requestAnimationFrame(animateHalo);
-        const opacity = 0.3 + Math.sin(Date.now() * 0.003) * 0.2;
+        const opacity = 0.4 + Math.sin(Date.now() * 0.003) * 0.3;
         halo.material.opacity = opacity;
         haloBack.material.opacity = opacity;
     }
@@ -2634,6 +2642,15 @@ function createHodlerVideoPlayer() {
     
     // Adiciona colisão para o player
     const playerCollider = new THREE.Box3().setFromObject(playerGroup);
+    
+    // Garantir que o player seja visível mesmo quando o usuário tem acesso
+    if (window.hasMultiversoPass === true || window.hasAccess === true) {
+        hodlerVideoPlayer.visible = true;
+        console.log('Player de vídeo para hodlers inicializado e visível');
+    } else {
+        hodlerVideoPlayer.visible = false;
+        console.log('Player de vídeo para hodlers inicializado mas não visível (sem acesso)');
+    }
     
     return { playerGroup, playerCollider };
 }
@@ -2658,5 +2675,30 @@ function changeHodlerVideo(index) {
             thumbnail.style.backgroundColor = i === index ? '#3366cc' : '#444';
         });
     }
+}
+
+// ... existing code ...
+
+// Função para exibir mensagens de aviso
+function showWarningMessage(message) {
+    const statusMsg = document.createElement('div');
+    statusMsg.style.position = 'fixed';
+    statusMsg.style.top = '50%';
+    statusMsg.style.left = '50%';
+    statusMsg.style.transform = 'translate(-50%, -50%)';
+    statusMsg.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    statusMsg.style.color = '#ff0000';
+    statusMsg.style.padding = '20px';
+    statusMsg.style.borderRadius = '10px';
+    statusMsg.style.fontFamily = 'Arial';
+    statusMsg.style.fontSize = '24px';
+    statusMsg.style.zIndex = '1000';
+    statusMsg.innerHTML = '⚠️ ' + message;
+    document.body.appendChild(statusMsg);
+    
+    // Remove a mensagem após 5 segundos
+    setTimeout(() => {
+        document.body.removeChild(statusMsg);
+    }, 5000);
 }
 
