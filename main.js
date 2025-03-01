@@ -781,7 +781,7 @@ let mintButton;
 const HODLER_VIDEO_WIDTH = 800;
 const HODLER_VIDEO_HEIGHT = 500;
 // Posição atualizada para ficar acima do terreno lunar exclusivo
-const HODLER_VIDEO_POSITION = { x: 0, y: 2000, z: -17000 }; // Posicionado acima do terreno exclusivo
+const HODLER_VIDEO_POSITION = { x: 0, y: 3000, z: -20000 }; // Posicionado mais alto e mais distante para melhor visibilidade
 
 // Lista de vídeos disponíveis no Bunny
 const hodlerVideos = [
@@ -1669,9 +1669,19 @@ function animate() {
             
             // Verifica se o player de vídeo está visível quando deveria estar
             const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
-            if (hasPass && hodlerVideoPlayer && !hodlerVideoPlayer.visible) {
-                console.log('Corrigindo visibilidade do player de vídeo');
-                hodlerVideoPlayer.visible = true;
+            if (hasPass && hodlerVideoPlayer) {
+                if (!hodlerVideoPlayer.visible) {
+                    console.log('Corrigindo visibilidade do player de vídeo');
+                    hodlerVideoPlayer.visible = true;
+                    
+                    // Se o player não estiver visível mesmo após tentar corrigir, força uma atualização completa
+                    setTimeout(function() {
+                        if (!hodlerVideoPlayer.visible) {
+                            console.log('Player ainda não visível, forçando atualização completa');
+                            forceUpdateHodlerVideoPlayer();
+                        }
+                    }, 500);
+                }
             }
         }
         
@@ -2138,6 +2148,19 @@ function checkMultiversoPassStatus() {
     console.log('Verificação explícita do Multiverso Pass:', hasPass);
     console.log('window.hasMultiversoPass =', window.hasMultiversoPass);
     console.log('window.hasAccess =', window.hasAccess);
+    
+    // Armazena o status anterior para comparação
+    const previousStatus = window.previousAccessStatus;
+    
+    // Se o status mudou, força a atualização do player
+    if (previousStatus !== undefined && previousStatus !== hasPass) {
+        console.log('Status de acesso mudou de', previousStatus, 'para', hasPass);
+        // Força a atualização do player de vídeo
+        forceUpdateHodlerVideoPlayer();
+    }
+    
+    // Atualiza o status anterior
+    window.previousAccessStatus = hasPass;
     
     // Atualiza o acesso exclusivo com o status atual
     updateExclusiveAccess(hasPass);
@@ -2722,4 +2745,45 @@ function showWarningMessage(message) {
         document.body.removeChild(statusMsg);
     }, 5000);
 }
+
+// ... existing code ...
+// Função para forçar a atualização do player de vídeo
+function forceUpdateHodlerVideoPlayer() {
+    console.log('Forçando atualização do player de vídeo');
+    
+    // Verifica se o usuário tem acesso
+    const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+    console.log('Status de acesso ao forçar atualização:', hasAccess);
+    
+    // Se o player já existe, remove-o para recriar
+    if (hodlerVideoPlayer) {
+        console.log('Removendo player existente para recriar');
+        cssScene.remove(hodlerVideoPlayer);
+        hodlerVideoPlayer = null;
+    }
+    
+    // Cria um novo player
+    createHodlerVideoPlayer();
+    
+    // Garante que a visibilidade esteja correta
+    if (hodlerVideoPlayer) {
+        hodlerVideoPlayer.visible = hasAccess;
+        console.log('Player recriado com visibilidade:', hasAccess);
+        
+        // Força uma renderização imediata
+        if (cssRenderer && cssScene && camera) {
+            cssRenderer.render(cssScene, camera);
+            console.log('Renderização forçada da cena CSS3D');
+        }
+    }
+}
+
+// Adiciona um evento para forçar a atualização do player após o carregamento completo
+window.addEventListener('load', function() {
+    console.log('Página totalmente carregada, verificando player de vídeo');
+    // Aguarda um momento para garantir que tudo esteja inicializado
+    setTimeout(function() {
+        forceUpdateHodlerVideoPlayer();
+    }, 2000);
+});
 
