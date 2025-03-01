@@ -2231,6 +2231,9 @@ window.addEventListener('load', function() {
     setTimeout(function() {
         forceUpdateHodlerVideoPlayer();
         
+        // Cria um player DOM direto como fallback quando o player 3D não funciona
+        createDirectDOMPlayer();
+        
         // Adiciona função de diagnóstico que pode ser chamada do console
         window.debugHodlerPlayer = function() {
             console.log('=== DIAGNÓSTICO DO PLAYER DE VÍDEO ===');
@@ -2285,4 +2288,214 @@ window.addEventListener('load', function() {
         console.log('[INSTRUÇÃO] Para diagnosticar problemas com o player, digite window.debugHodlerPlayer() no console');
     }, 2000);
 });
+
+// Função para criar um player DOM direto (como fallback)
+function createDirectDOMPlayer() {
+    console.log('[DEBUG] Criando player DOM direto como fallback');
+    
+    // Remove o player anterior se existir
+    const existingPlayer = document.getElementById('direct-hodler-player');
+    if (existingPlayer) {
+        document.body.removeChild(existingPlayer);
+    }
+    
+    // Cria o container principal
+    const playerContainer = document.createElement('div');
+    playerContainer.id = 'direct-hodler-player';
+    playerContainer.style.position = 'fixed';
+    playerContainer.style.top = '100px';
+    playerContainer.style.right = '20px';
+    playerContainer.style.width = '400px';
+    playerContainer.style.backgroundColor = '#000000';
+    playerContainer.style.border = '5px solid #FF3366';
+    playerContainer.style.borderRadius = '10px';
+    playerContainer.style.padding = '0';
+    playerContainer.style.zIndex = '9999';
+    playerContainer.style.boxShadow = '0 0 20px rgba(255, 51, 102, 0.7)';
+    playerContainer.style.display = 'none'; // Inicialmente oculto até verificarmos o acesso
+    
+    // Adiciona cabeçalho
+    const header = document.createElement('div');
+    header.style.backgroundColor = '#FF3366';
+    header.style.color = 'white';
+    header.style.padding = '10px';
+    header.style.fontWeight = 'bold';
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.textContent = '🎓 ÁREA EXCLUSIVA - AULAS BITCOIN 🎓';
+    playerContainer.appendChild(header);
+    
+    // Botão para minimizar/maximizar
+    const toggleButton = document.createElement('button');
+    toggleButton.textContent = '−';
+    toggleButton.style.backgroundColor = 'transparent';
+    toggleButton.style.border = 'none';
+    toggleButton.style.color = 'white';
+    toggleButton.style.fontSize = '20px';
+    toggleButton.style.cursor = 'pointer';
+    toggleButton.style.marginLeft = '10px';
+    header.appendChild(toggleButton);
+    
+    // Iframe para o vídeo
+    const videoContainer = document.createElement('div');
+    videoContainer.style.position = 'relative';
+    videoContainer.style.paddingTop = '56.25%'; // 16:9 aspect ratio
+    playerContainer.appendChild(videoContainer);
+    
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.src = hodlerVideos[0].url;
+    iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+    iframe.allowFullscreen = true;
+    videoContainer.appendChild(iframe);
+    
+    // Selecionar vídeos
+    const selectContainer = document.createElement('div');
+    selectContainer.style.padding = '10px';
+    selectContainer.style.backgroundColor = '#222';
+    playerContainer.appendChild(selectContainer);
+    
+    const selectLabel = document.createElement('label');
+    selectLabel.textContent = 'Selecionar aula: ';
+    selectLabel.style.color = 'white';
+    selectLabel.style.marginRight = '10px';
+    selectContainer.appendChild(selectLabel);
+    
+    const select = document.createElement('select');
+    select.style.padding = '5px';
+    select.style.borderRadius = '3px';
+    select.style.border = '1px solid #555';
+    select.style.backgroundColor = '#333';
+    select.style.color = 'white';
+    selectContainer.appendChild(select);
+    
+    // Adiciona opções de vídeo
+    hodlerVideos.forEach((video, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = video.title;
+        select.appendChild(option);
+    });
+    
+    // Evento de mudança para o select
+    select.addEventListener('change', function() {
+        iframe.src = hodlerVideos[this.value].url;
+    });
+    
+    // Toggle para minimizar/maximizar
+    let minimized = false;
+    toggleButton.addEventListener('click', function() {
+        if (minimized) {
+            videoContainer.style.display = 'block';
+            selectContainer.style.display = 'block';
+            toggleButton.textContent = '−';
+            minimized = false;
+        } else {
+            videoContainer.style.display = 'none';
+            selectContainer.style.display = 'none';
+            toggleButton.textContent = '+';
+            minimized = true;
+        }
+    });
+    
+    // Adiciona ao corpo do documento
+    document.body.appendChild(playerContainer);
+    
+    // Função para atualizar a visibilidade com base no acesso
+    function updatePlayerVisibility() {
+        const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+        playerContainer.style.display = hasAccess ? 'block' : 'none';
+    }
+    
+    // Verifica inicialmente e configura verificação periódica
+    updatePlayerVisibility();
+    setInterval(updatePlayerVisibility, 2000);
+    
+    // Registra no objeto window para fácil acesso
+    window.directPlayerContainer = playerContainer;
+    window.updateDirectPlayerVisibility = updatePlayerVisibility;
+    
+    console.log('[DEBUG] Player DOM direto criado e configurado');
+    return playerContainer;
+}
+
+// Função para forçar a exibição do player direto
+function showDirectPlayer() {
+    const playerContainer = document.getElementById('direct-hodler-player');
+    if (playerContainer) {
+        playerContainer.style.display = 'block';
+    } else {
+        const newPlayer = createDirectDOMPlayer();
+        newPlayer.style.display = 'block';
+    }
+}
+
+// Adiciona comando global para exibir o player direto
+window.showHodlerVideos = function() {
+    console.log('[DEBUG] Forçando exibição do player direto');
+    showDirectPlayer();
+    return "Player de vídeos exclusivos exibido!";
+};
+
+// ... existing code ...
+function checkMultiversoPassStatus() {
+    // Verifica o status do token JWT
+    const token = localStorage.getItem('jwt_token');
+    let previousAccessStatus = window.hasMultiversoPass;
+    
+    if (token) {
+        try {
+            // Decodifica o token para verificar se é válido e se possui o campo necessário
+            const tokenParts = token.split('.');
+            if (tokenParts.length === 3) {
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const currentTime = Math.floor(Date.now() / 1000);
+                
+                if (payload.exp && payload.exp > currentTime && payload.multiverso_hodler === true) {
+                    window.hasMultiversoPass = true;
+                    window.hasAccess = true;
+                    console.log('[DEBUG] Multiverso Pass verificado e válido');
+                } else {
+                    window.hasMultiversoPass = false;
+                    console.log('[DEBUG] Token expirado ou não possui acesso de hodler');
+                }
+            } else {
+                window.hasMultiversoPass = false;
+                console.log('[DEBUG] Token inválido (formato incorreto)');
+            }
+        } catch (e) {
+            window.hasMultiversoPass = false;
+            console.error('[DEBUG] Erro ao processar o token:', e);
+        }
+    } else {
+        window.hasMultiversoPass = false;
+        console.log('[DEBUG] Nenhum token encontrado');
+    }
+
+    // Se o status de acesso mudou, atualiza o player e o acesso exclusivo
+    if (previousAccessStatus !== window.hasMultiversoPass) {
+        console.log('[DEBUG] Status de acesso mudou:', previousAccessStatus, '->', window.hasMultiversoPass);
+        
+        // Força a atualização do player 3D
+        forceUpdateHodlerVideoPlayer();
+        
+        // Atualiza o player DOM direto
+        if (window.updateDirectPlayerVisibility) {
+            window.updateDirectPlayerVisibility();
+        } else {
+            // Se a função não existir, cria o player
+            createDirectDOMPlayer();
+        }
+        
+        // Atualiza o acesso à área exclusiva
+        updateExclusiveAccess(window.hasMultiversoPass);
+    }
+}
+// ... existing code ...
 
