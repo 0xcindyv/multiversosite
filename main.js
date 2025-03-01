@@ -791,22 +791,22 @@ const hodlerVideos = [
         url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
     },
     { 
-        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        id: '7fb2a1917ea8-402c-4471-9a9e-b98c3c67', 
         title: 'Aula 2: Blockchain e Consenso', 
         url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
     },
     { 
-        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        id: '9a9e-7fb2a1917ea8-402c-4471-b98c3c67', 
         title: 'Aula 3: Carteiras e Segurança', 
         url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
     },
     { 
-        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        id: '4471-9a9e-7fb2a1917ea8-402c-b98c3c67', 
         title: 'Aula 4: Mineração e Halving', 
         url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
     },
     { 
-        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        id: '402c-4471-9a9e-7fb2a1917ea8-b98c3c67', 
         title: 'Aula 5: Lightning Network', 
         url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
     }
@@ -2497,5 +2497,204 @@ function checkMultiversoPassStatus() {
         updateExclusiveAccess(window.hasMultiversoPass);
     }
 }
+// ... existing code ...
+
+// Função para criar o player de vídeo para hodlers
+function createHodlerVideoPlayer() {
+    console.log('[DEBUG] Criando player de vídeo para hodlers');
+    
+    // Remove o player existente se houver
+    if (hodlerVideoPlayer) {
+        console.log('[DEBUG] Removendo player existente');
+        cssScene.remove(hodlerVideoPlayer);
+        hodlerVideoPlayer = null;
+    }
+    
+    // Verifica se o usuário tem acesso
+    const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+    if (!hasAccess) {
+        console.log('[DEBUG] Usuário não tem acesso, não criando player');
+        return null;
+    }
+    
+    try {
+        // Criar grupo para o player
+        hodlerVideoPlayer = new THREE.Group();
+        hodlerVideoPlayer.name = 'hodlerVideoPlayerGroup';
+        
+        // Criar elemento DOM para o player
+        const playerElement = document.createElement('div');
+        playerElement.style.width = HODLER_VIDEO_WIDTH + 'px';
+        playerElement.style.height = HODLER_VIDEO_HEIGHT + 'px';
+        playerElement.style.backgroundColor = '#000000';
+        playerElement.style.border = '20px solid #FF3366';
+        playerElement.style.borderRadius = '15px';
+        playerElement.style.overflow = 'hidden';
+        playerElement.style.pointerEvents = 'auto'; // Importante: permite interação
+        
+        // Título do player
+        const titleElement = document.createElement('div');
+        titleElement.textContent = '🎓 ÁREA EXCLUSIVA - AULAS BITCOIN 🎓';
+        titleElement.style.backgroundColor = '#FF3366';
+        titleElement.style.color = 'white';
+        titleElement.style.padding = '15px';
+        titleElement.style.fontSize = '24px';
+        titleElement.style.fontWeight = 'bold';
+        titleElement.style.textAlign = 'center';
+        playerElement.appendChild(titleElement);
+        
+        // Container para o vídeo e controles
+        const videoContainer = document.createElement('div');
+        videoContainer.style.position = 'relative';
+        videoContainer.style.width = '100%';
+        videoContainer.style.height = (HODLER_VIDEO_HEIGHT - 54) + 'px';
+        playerElement.appendChild(videoContainer);
+        
+        // Iframe do vídeo
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.src = hodlerVideos[currentVideoIndex].url;
+        iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+        iframe.allowFullscreen = true;
+        videoContainer.appendChild(iframe);
+        
+        // Controles de navegação
+        const controlsContainer = document.createElement('div');
+        controlsContainer.style.display = 'flex';
+        controlsContainer.style.justifyContent = 'space-between';
+        controlsContainer.style.padding = '10px';
+        controlsContainer.style.backgroundColor = '#222';
+        playerElement.appendChild(controlsContainer);
+        
+        // Botão anterior
+        const prevButton = document.createElement('button');
+        prevButton.textContent = '< Anterior';
+        prevButton.style.padding = '5px 10px';
+        prevButton.style.backgroundColor = '#FF3366';
+        prevButton.style.color = 'white';
+        prevButton.style.border = 'none';
+        prevButton.style.borderRadius = '5px';
+        prevButton.style.cursor = 'pointer';
+        prevButton.onclick = function() {
+            currentVideoIndex = (currentVideoIndex - 1 + hodlerVideos.length) % hodlerVideos.length;
+            iframe.src = hodlerVideos[currentVideoIndex].url;
+        };
+        controlsContainer.appendChild(prevButton);
+        
+        // Título do vídeo atual
+        const videoTitle = document.createElement('span');
+        videoTitle.textContent = hodlerVideos[currentVideoIndex].title;
+        videoTitle.style.color = 'white';
+        videoTitle.style.padding = '5px';
+        controlsContainer.appendChild(videoTitle);
+        
+        // Botão próximo
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Próximo >';
+        nextButton.style.padding = '5px 10px';
+        nextButton.style.backgroundColor = '#FF3366';
+        nextButton.style.color = 'white';
+        nextButton.style.border = 'none';
+        nextButton.style.borderRadius = '5px';
+        nextButton.style.cursor = 'pointer';
+        nextButton.onclick = function() {
+            currentVideoIndex = (currentVideoIndex + 1) % hodlerVideos.length;
+            iframe.src = hodlerVideos[currentVideoIndex].url;
+        };
+        controlsContainer.appendChild(nextButton);
+        
+        // Criar objeto CSS3D
+        const playerObject = new CSS3DObject(playerElement);
+        
+        // Posicionar o player
+        playerObject.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z);
+        playerObject.scale.set(1, 1, 1);
+        playerObject.name = 'hodlerVideoPlayerObject';
+        
+        // Adicionar ao grupo
+        hodlerVideoPlayer.add(playerObject);
+        hodlerVideoPlayer.visible = true;
+        
+        // Adicionar à cena CSS3D
+        cssScene.add(hodlerVideoPlayer);
+        
+        // Forçar renderização imediata
+        if (cssRenderer && camera) {
+            cssRenderer.render(cssScene, camera);
+            console.log('[DEBUG] Player renderizado na cena CSS3D');
+        }
+        
+        console.log('[DEBUG] Player de vídeo para hodlers criado com sucesso');
+        return hodlerVideoPlayer;
+    } catch (error) {
+        console.error('[ERRO] Falha ao criar player de vídeo para hodlers:', error);
+        return null;
+    }
+}
+
+// ... existing code ...
+
+// Função para forçar a atualização do player de vídeo para hodlers
+function forceUpdateHodlerVideoPlayer() {
+    console.log('[DEBUG] Forçando atualização do player de vídeo para hodlers');
+    
+    // Verifica se o usuário tem acesso
+    const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+    console.log('[DEBUG] Status de acesso:', hasAccess);
+    
+    // Remove o player existente se houver
+    if (hodlerVideoPlayer) {
+        console.log('[DEBUG] Removendo player existente para recriar');
+        cssScene.remove(hodlerVideoPlayer);
+        hodlerVideoPlayer = null;
+    }
+    
+    // Se o usuário tem acesso, cria um novo player
+    if (hasAccess) {
+        console.log('[DEBUG] Usuário tem acesso, criando novo player');
+        
+        // Cria o player com um pequeno atraso para garantir que tudo esteja inicializado
+        setTimeout(() => {
+            createHodlerVideoPlayer();
+            
+            // Verifica se o player foi criado com sucesso
+            if (hodlerVideoPlayer) {
+                console.log('[DEBUG] Player criado com sucesso, visibilidade =', hodlerVideoPlayer.visible);
+                
+                // Força uma renderização imediata
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                    console.log('[DEBUG] Renderização forçada após criar o player');
+                }
+                
+                // Verifica se o player está visível na cena
+                const isInScene = cssScene.children.includes(hodlerVideoPlayer);
+                console.log('[DEBUG] Player está na cena CSS3D:', isInScene);
+                
+                // Verifica se o player tem filhos (objetos CSS3D)
+                const hasChildren = hodlerVideoPlayer.children.length > 0;
+                console.log('[DEBUG] Player tem objetos filhos:', hasChildren);
+                
+                // Se o player não estiver na cena, adiciona-o
+                if (!isInScene) {
+                    console.log('[DEBUG] Player não está na cena, adicionando...');
+                    cssScene.add(hodlerVideoPlayer);
+                    
+                    // Força outra renderização
+                    if (cssRenderer && cssScene && camera) {
+                        cssRenderer.render(cssScene, camera);
+                    }
+                }
+            } else {
+                console.log('[DEBUG] FALHA ao criar o player!');
+            }
+        }, 500);
+    } else {
+        console.log('[DEBUG] Usuário não tem acesso, não criando player');
+    }
+}
+
 // ... existing code ...
 
