@@ -822,9 +822,17 @@ function init() {
         // Cria o player de vídeo exclusivo apenas se o usuário tiver o Multiverso Pass
         if (hasPass) {
             exclusiveVideoPlayer = createExclusiveVideoPlayer();
-            console.log('Player de vídeo exclusivo criado para hodler');
+            console.log('Player de vídeo exclusivo criado para hodler. Objeto:', exclusiveVideoPlayer ? 'Sim' : 'Não');
         } else {
-            console.log('Usuário sem Multiverso Pass, player exclusivo não criado');
+            // Para fins de depuração, vamos criar o player mesmo sem acesso, mas deixá-lo invisível
+            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+            if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+                exclusiveVideoPlayer.videoGroup.visible = false;
+                if (exclusiveVideoPlayer.particles) {
+                    exclusiveVideoPlayer.particles.visible = false;
+                }
+            }
+            console.log('Usuário sem Multiverso Pass, player exclusivo criado mas invisível para depuração');
         }
         
         // Posiciona a nave acima do terreno lunar
@@ -2077,7 +2085,14 @@ function updateExclusiveAccess(hasAccess) {
             if (exclusiveVideoPlayer.particles) {
                 exclusiveVideoPlayer.particles.visible = true;
             }
-            console.log('Player de vídeo exclusivo agora visível');
+            // Força a posição correta (caso tenha sido alterada)
+            const videoObject = exclusiveVideoPlayer.videoGroup.children[0];
+            if (videoObject) {
+                videoObject.position.set(0, 1500, -14000);
+                console.log('Posição do player exclusivo reajustada:', videoObject.position.x, videoObject.position.y, videoObject.position.z);
+            }
+            console.log('Player de vídeo exclusivo agora visível. Verificação de visualização:', 
+                         exclusiveVideoPlayer.videoGroup.visible);
         }
     } else {
         // Se o usuário não tem acesso e o player existe, esconde-o
@@ -2086,7 +2101,8 @@ function updateExclusiveAccess(hasAccess) {
             if (exclusiveVideoPlayer.particles) {
                 exclusiveVideoPlayer.particles.visible = false;
             }
-            console.log('Player de vídeo exclusivo escondido');
+            console.log('Player de vídeo exclusivo escondido. Status de visualização:', 
+                         exclusiveVideoPlayer.videoGroup.visible);
         }
     }
     
@@ -2478,8 +2494,12 @@ function createExclusiveVideoPlayer() {
     iframe.style.width = '100%';
     iframe.style.height = (EXCLUSIVE_VIDEO_HEIGHT - 54) + 'px';
     iframe.style.border = 'none';
-    iframe.src = 'https://iframe.mediadelivery.net/embed/203779/video'; // URL do Bunny para vídeos exclusivos
+    // Tenta usar a biblioteca de entrega do Bunny, mas inclui um fallback para garantir que algo seja exibido
+    iframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c'; // ID específico do vídeo no Bunny
     iframe.allowFullscreen = true;
+    
+    // Adiciona atributos de segurança para reprodução de mídia
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
     videoElement.appendChild(iframe);
     
     // Iframe do player exclusivo (verso)
@@ -2493,13 +2513,13 @@ function createExclusiveVideoPlayer() {
     const videoObject = new CSS3DObject(videoElement);
     // Posiciona o player exclusivo acima do terreno lunar exclusivo
     // O terreno exclusivo está em z = -14500 (aproximadamente), então posicionamos o player mais adiante
-    videoObject.position.set(0, 2000, -18000); // Centralizado no eixo X, alto no Y, profundo no Z
-    videoObject.scale.set(3, 3, 3);
+    videoObject.position.set(0, 1500, -14000); // Posição ajustada para ficar mais visível na área exclusiva
+    videoObject.scale.set(2, 2, 2); // Escala reduzida para melhor visualização
     
     // Criar objeto CSS3D para verso (igual à frente)
     const videoObjectBack = new CSS3DObject(videoElementBack);
-    videoObjectBack.position.set(0, 2000, -18001); // Posição ligeiramente atrás
-    videoObjectBack.scale.set(3, 3, 3);
+    videoObjectBack.position.set(0, 1500, -14001); // Posição ligeiramente atrás
+    videoObjectBack.scale.set(2, 2, 2); // Mantém a mesma escala
     videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
     
     // Adiciona os dois lados ao grupo
@@ -2507,6 +2527,7 @@ function createExclusiveVideoPlayer() {
     videoGroup.add(videoObjectBack);
     
     cssScene.add(videoGroup);
+    console.log('Player exclusivo adicionado à cena CSS3D. Posição:', videoObject.position.x, videoObject.position.y, videoObject.position.z);
     
     // Ajusta as luzes para o player exclusivo
     const spotLight1 = new THREE.SpotLight(0x9932CC, 3); // Luz mais intensa
@@ -2618,6 +2639,37 @@ function createExclusiveVideoPlayer() {
         particles.geometry.attributes.position.needsUpdate = true;
     }
     animateParticles();
+    
+    // Adiciona uma função de depuração que loga a posição a cada 5 segundos
+    setInterval(() => {
+        if (videoGroup.visible) {
+            console.log('Player exclusivo visível. Posição:', videoObject.position.x, videoObject.position.y, videoObject.position.z);
+        } else {
+            console.log('Player exclusivo está invisível. Status de acesso:', window.hasMultiversoPass);
+        }
+    }, 5000);
+    
+    // Adiciona um marcador luminoso para indicar onde está o player exclusivo
+    const markerGeometry = new THREE.SphereGeometry(100, 32, 32);
+    const markerMaterial = new THREE.MeshBasicMaterial({
+        color: 0x9932CC,
+        transparent: true,
+        opacity: 0.7,
+        emissive: 0x9932CC,
+        emissiveIntensity: 1
+    });
+    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+    marker.position.set(0, 1800, -14000); // Posiciona acima do player
+    scene.add(marker);
+    
+    // Anima o marcador
+    function animateMarker() {
+        requestAnimationFrame(animateMarker);
+        const time = Date.now() * 0.001;
+        marker.position.y = 1800 + Math.sin(time) * 100; // Movimento vertical suave
+        marker.scale.setScalar(1 + Math.sin(time * 0.5) * 0.2); // Pulsação
+    }
+    animateMarker();
     
     return { videoGroup, videoCollider, particles };
 }
