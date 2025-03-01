@@ -2143,6 +2143,9 @@ function updateExclusiveAccess(hasAccess) {
             if (exclusiveVideoPlayer.plane) {
                 exclusiveVideoPlayer.plane.visible = true;
             }
+            if (exclusiveVideoPlayer.ambientLight) {
+                exclusiveVideoPlayer.ambientLight.visible = true;
+            }
             
             // Garantir que a posição esteja correta
             if (exclusiveVideoPlayer.position) {
@@ -2158,13 +2161,16 @@ function updateExclusiveAccess(hasAccess) {
                 
                 // Verificar e atualizar as posições dos elementos visuais
                 if (exclusiveVideoPlayer.marker) {
-                    exclusiveVideoPlayer.marker.position.set(pos.x, pos.y + 300, pos.z);
+                    exclusiveVideoPlayer.marker.position.set(pos.x, pos.y + 400, pos.z);
                 }
                 if (exclusiveVideoPlayer.plane) {
                     exclusiveVideoPlayer.plane.position.set(pos.x, pos.y, pos.z + 10);
                 }
                 if (exclusiveVideoPlayer.halo) {
                     exclusiveVideoPlayer.halo.position.set(pos.x, pos.y, pos.z - 50);
+                }
+                if (exclusiveVideoPlayer.ambientLight) {
+                    exclusiveVideoPlayer.ambientLight.position.set(pos.x, pos.y, pos.z);
                 }
                 
                 console.log('🔵 Posição do player exclusivo reajustada para:', pos.x, pos.y, pos.z);
@@ -2211,6 +2217,9 @@ function updateExclusiveAccess(hasAccess) {
             }
             if (exclusiveVideoPlayer.plane) {
                 exclusiveVideoPlayer.plane.visible = false;
+            }
+            if (exclusiveVideoPlayer.ambientLight) {
+                exclusiveVideoPlayer.ambientLight.visible = false;
             }
         }
     }
@@ -2266,13 +2275,7 @@ function updateExclusiveAccess(hasAccess) {
             setTimeout(() => {
                 document.body.removeChild(statusMsg);
             }, 5000);
-        } else {
-            // Aplica as novas regras de colisão imediatamente
-            const collisionResult = checkTerrainCollision(spaceship.position.clone());
-            spaceship.position.copy(collisionResult.position);
         }
-        
-        console.log('Regras de colisão atualizadas para:', hasAccessBoolean ? 'Sem restrições laterais' : 'Com restrições laterais');
     }
 }
 
@@ -2651,11 +2654,11 @@ function createExclusiveVideoPlayer() {
     // Usar CSS3DObject para renderizar o elemento DOM no espaço 3D
     const videoObject = new CSS3DObject(videoElement);
     videoObject.position.set(0, playerY, playerZ); // Coordenadas precisas
-    videoObject.scale.set(1.5, 1.5, 1.5); // Escala ajustada
+    videoObject.scale.set(2, 2, 2); // Escala aumentada para maior visibilidade
     
     const videoObjectBack = new CSS3DObject(videoElementBack);
     videoObjectBack.position.set(0, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
-    videoObjectBack.scale.set(1.5, 1.5, 1.5);
+    videoObjectBack.scale.set(2, 2, 2); // Escala aumentada para maior visibilidade
     videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
     
     // Criar um grupo para manter os dois lados juntos
