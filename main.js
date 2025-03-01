@@ -119,8 +119,8 @@ cssRenderer.setSize(window.innerWidth, window.innerHeight);
 cssRenderer.domElement.style.position = 'absolute';
 cssRenderer.domElement.style.top = '0';
 cssRenderer.domElement.style.left = '0';
-cssRenderer.domElement.style.pointerEvents = 'auto'; // Alterado de 'none' para 'auto' para permitir interação
-cssRenderer.domElement.style.zIndex = '2';
+cssRenderer.domElement.style.pointerEvents = 'auto'; // Permitir interação com elementos CSS3D
+cssRenderer.domElement.style.zIndex = '2'; // Garante que fique sobre o WebGLRenderer
 cssRenderer.domElement.id = 'css-renderer';
 document.body.appendChild(cssRenderer.domElement);
 
@@ -785,11 +785,31 @@ const HODLER_VIDEO_POSITION = { x: 0, y: 3500, z: -20000 }; // Posicionado mais 
 
 // Lista de vídeos disponíveis no Bunny
 const hodlerVideos = [
-    { id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', title: 'Aula 1: Introdução ao Bitcoin', url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false&loop=false&muted=false&preload=true' },
-    { id: 'video2', title: 'Aula 2: Blockchain e Consenso', url: 'https://iframe.mediadelivery.net/embed/249011/video2?autoplay=false&loop=false&muted=false&preload=true' },
-    { id: 'video3', title: 'Aula 3: Carteiras e Segurança', url: 'https://iframe.mediadelivery.net/embed/249011/video3?autoplay=false&loop=false&muted=false&preload=true' },
-    { id: 'video4', title: 'Aula 4: Mineração e Halving', url: 'https://iframe.mediadelivery.net/embed/249011/video4?autoplay=false&loop=false&muted=false&preload=true' },
-    { id: 'video5', title: 'Aula 5: Lightning Network', url: 'https://iframe.mediadelivery.net/embed/249011/video5?autoplay=false&loop=false&muted=false&preload=true' }
+    { 
+        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        title: 'Aula 1: Introdução ao Bitcoin', 
+        url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
+    },
+    { 
+        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        title: 'Aula 2: Blockchain e Consenso', 
+        url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
+    },
+    { 
+        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        title: 'Aula 3: Carteiras e Segurança', 
+        url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
+    },
+    { 
+        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        title: 'Aula 4: Mineração e Halving', 
+        url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
+    },
+    { 
+        id: 'b98c3c67-402c-4471-9a9e-7fb2a1917ea8', 
+        title: 'Aula 5: Lightning Network', 
+        url: 'https://iframe.mediadelivery.net/embed/249011/b98c3c67-402c-4471-9a9e-7fb2a1917ea8?autoplay=false' 
+    }
 ];
 
 // Variável global para o player de vídeo
@@ -798,7 +818,7 @@ let currentVideoIndex = 0;
 
 function init() {
     try {
-        console.log('Iniciando inicialização da cena');
+        console.log('[DEBUG] Iniciando inicialização da cena');
         // Limpa as cenas
         while(scene.children.length > 0) { 
             scene.remove(scene.children[0]); 
@@ -819,31 +839,39 @@ function init() {
         scene.add(directionalLight);
 
         // Cria elementos na ordem correta
-        console.log('Criando elementos da cena...');
+        console.log('[DEBUG] Criando elementos da cena...');
         createStars();
         lunarTerrain = createLunarTerrain();
         exclusiveLunarTerrain = createExclusiveLunarTerrain();
         
         // Verifica o status do Multiverso Pass antes de definir a visibilidade
         const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
-        console.log('Inicializando terreno exclusivo. Status do Multiverso Pass:', hasPass);
-        console.log('window.hasMultiversoPass =', window.hasMultiversoPass);
-        console.log('window.hasAccess =', window.hasAccess);
+        console.log('[DEBUG] Inicializando terreno exclusivo. Status do Multiverso Pass:', hasPass);
+        console.log('[DEBUG] window.hasMultiversoPass =', window.hasMultiversoPass);
+        console.log('[DEBUG] window.hasAccess =', window.hasAccess);
         exclusiveLunarTerrain.visible = hasPass;
         
         spaceship = createSpaceship();
         createStreamScreen();
         
         // Cria o player de vídeo para hodlers e garante a visibilidade correta
-        console.log('Criando player de vídeo para hodlers na inicialização');
+        console.log('[DEBUG] Criando player de vídeo para hodlers na inicialização');
+        
+        // Remove o player existente para garantir uma criação limpa
+        if (hodlerVideoPlayer) {
+            cssScene.remove(hodlerVideoPlayer);
+            hodlerVideoPlayer = null;
+        }
+        
+        // Cria um novo player
         createHodlerVideoPlayer();
         
         // Verifica novamente se o player foi criado e define sua visibilidade
         if (hodlerVideoPlayer) {
             hodlerVideoPlayer.visible = hasPass;
-            console.log('Visibilidade do player definida na inicialização:', hasPass);
+            console.log('[DEBUG] Visibilidade do player definida na inicialização:', hasPass);
         } else {
-            console.error('Falha ao criar o player de vídeo na inicialização');
+            console.error('[DEBUG] Falha ao criar o player de vídeo na inicialização');
         }
         
         const earth = createEarth();
@@ -871,16 +899,36 @@ function init() {
         controls.deceleration = 5; // Aumenta desaceleração
         
         // Força uma renderização inicial para garantir que tudo seja exibido corretamente
-        renderer.render(scene, camera);
-        cssRenderer.render(cssScene, camera);
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
         
-        console.log('Inicialização da cena concluída com sucesso');
+        if (cssRenderer && cssScene && camera) {
+            cssRenderer.render(cssScene, camera);
+            console.log('[DEBUG] Renderização inicial da cena CSS3D');
+        }
+        
+        console.log('[DEBUG] Inicialização da cena concluída com sucesso');
         
         // Agenda uma verificação adicional do player após um curto atraso
         setTimeout(function() {
-            if (hasPass && (!hodlerVideoPlayer || !hodlerVideoPlayer.visible)) {
-                console.log('Verificação adicional: player não está visível, forçando atualização...');
-                forceUpdateHodlerVideoPlayer();
+            if (hasPass) {
+                // Verifica se o player existe e está visível
+                if (!hodlerVideoPlayer || !hodlerVideoPlayer.visible) {
+                    console.log('[DEBUG] Verificação adicional: player não está visível, forçando atualização...');
+                    forceUpdateHodlerVideoPlayer();
+                } else {
+                    console.log('[DEBUG] Verificação adicional: player está visível corretamente');
+                }
+                
+                // Força outra verificação depois de mais um tempo
+                setTimeout(function() {
+                    // Verifica se temos acesso e se o player está visível
+                    if (hasPass && (!hodlerVideoPlayer || !hodlerVideoPlayer.visible)) {
+                        console.log('[DEBUG] Segunda verificação: player ainda não visível, forçando atualização final...');
+                        forceUpdateHodlerVideoPlayer();
+                    }
+                }, 2000);
             }
         }, 1000);
         
@@ -889,11 +937,11 @@ function init() {
         
         // Verifica acesso inicial
         // Importante: Usa a função updateExclusiveAccess para garantir consistência
-        console.log('Verificando acesso inicial. Status do Multiverso Pass:', hasPass);
+        console.log('[DEBUG] Verificando acesso inicial. Status do Multiverso Pass:', hasPass);
         updateExclusiveAccess(hasPass);
         
     } catch (error) {
-        console.error('Erro durante a inicialização:', error);
+        console.error('[DEBUG] Erro durante a inicialização:', error);
     }
 }
 
@@ -1688,18 +1736,43 @@ function animate() {
             
             // Verifica se o player de vídeo está visível quando deveria estar
             const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
-            if (hasPass && hodlerVideoPlayer) {
-                if (!hodlerVideoPlayer.visible) {
-                    console.log('Corrigindo visibilidade do player de vídeo');
-                    hodlerVideoPlayer.visible = true;
+            if (hasPass) {
+                if (!hodlerVideoPlayer || !hodlerVideoPlayer.visible) {
+                    console.log('[DEBUG] Player não visível quando deveria estar - verificação periódica');
+                    
+                    if (!hodlerVideoPlayer) {
+                        console.log('[DEBUG] Player não existe, criando...');
+                        createHodlerVideoPlayer();
+                    } else {
+                        console.log('[DEBUG] Player existe mas não está visível, corrigindo...');
+                        hodlerVideoPlayer.visible = true;
+                    }
                     
                     // Se o player não estiver visível mesmo após tentar corrigir, força uma atualização completa
                     setTimeout(function() {
-                        if (!hodlerVideoPlayer.visible) {
-                            console.log('Player ainda não visível, forçando atualização completa');
+                        if (!hodlerVideoPlayer || !hodlerVideoPlayer.visible) {
+                            console.log('[DEBUG] Player ainda não visível, forçando atualização completa');
                             forceUpdateHodlerVideoPlayer();
+                            
+                            // Garante que a câmera esteja olhando na direção certa
+                            if (camera && hodlerVideoPlayer) {
+                                // Obtém a posição do player (assumindo que é o primeiro objeto)
+                                const playerObj = hodlerVideoPlayer.children[0];
+                                if (playerObj) {
+                                    console.log('[DEBUG] Ajustando câmera para olhar para o player');
+                                    const playerPos = playerObj.position.clone();
+                                    // Calcula uma posição a partir da qual olhar para o player
+                                    camera.lookAt(playerPos);
+                                }
+                            }
                         }
                     }, 500);
+                }
+            } else if (hodlerVideoPlayer) {
+                // Se o usuário não tem acesso mas o player está visível, esconde-o
+                if (hodlerVideoPlayer.visible) {
+                    console.log('[DEBUG] Escondendo player para usuário sem acesso');
+                    hodlerVideoPlayer.visible = false;
                 }
             }
         }
@@ -1916,8 +1989,19 @@ function animate() {
         }
         if (cssRenderer && cssScene && camera) {
             cssRenderer.render(cssScene, camera);
+            
+            // Verifica se o player de vídeo está visível a cada quadro quando o usuário tem acesso
+            const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
+            if (hasPass && hodlerVideoPlayer && !hodlerVideoPlayer.visible) {
+                console.log('[DEBUG] Corrigindo visibilidade do player a cada quadro');
+                hodlerVideoPlayer.visible = true;
+            }
         }
-
+        
+        // Atualiza controles
+        if (controls) {
+            controls.update(delta);
+        }
     } catch (error) {
         console.error("Error in animation loop:", error);
     }
@@ -2085,7 +2169,7 @@ init();
 
 // Atualiza a função de verificação do Multiverso Pass
 function updateExclusiveAccess(hasAccess) {
-    console.log('Atualizando acesso exclusivo:', hasAccess);
+    console.log('[DEBUG] Atualizando acesso exclusivo:', hasAccess);
     
     // Força a conversão para booleano para evitar problemas com valores undefined ou null
     const hasAccessBoolean = hasAccess === true;
@@ -2094,710 +2178,47 @@ function updateExclusiveAccess(hasAccess) {
     window.hasMultiversoPass = hasAccessBoolean;
     window.hasAccess = hasAccessBoolean; // Atualiza também hasAccess para compatibilidade
     
-    console.log('Após atualização: window.hasMultiversoPass =', window.hasMultiversoPass);
-    console.log('Após atualização: window.hasAccess =', window.hasAccess);
+    console.log('[DEBUG] Após atualização: window.hasMultiversoPass =', window.hasMultiversoPass);
+    console.log('[DEBUG] Após atualização: window.hasAccess =', window.hasAccess);
     
     // Garante que o terreno exclusivo seja atualizado
     if (exclusiveLunarTerrain) {
         // Atualiza a visibilidade do terreno exclusivo
         exclusiveLunarTerrain.visible = hasAccessBoolean;
-        console.log('Terreno exclusivo visível:', exclusiveLunarTerrain.visible);
+        console.log('[DEBUG] Terreno exclusivo visível:', exclusiveLunarTerrain.visible);
         
-        // Atualiza a visibilidade do player de vídeo para hodlers
-        if (hodlerVideoPlayer) {
-            hodlerVideoPlayer.visible = hasAccessBoolean;
-            console.log('Player de vídeo para hodlers visível:', hodlerVideoPlayer.visible);
+        // Recria o player se o acesso for concedido ou remove se for revogado
+        if (hasAccessBoolean) {
+            console.log('[DEBUG] Acesso concedido, recriando o player de vídeo');
             
-            // Se o acesso foi concedido e o player não estava visível antes, recria o player
-            if (hasAccessBoolean) {
-                console.log('Acesso concedido, garantindo que o player esteja visível');
-                // Forçar a recriação do player para garantir que ele seja exibido corretamente
-                createHodlerVideoPlayer();
+            // Remove o player existente, se houver
+            if (hodlerVideoPlayer) {
+                console.log('[DEBUG] Removendo player existente para recriar');
+                cssScene.remove(hodlerVideoPlayer);
+                hodlerVideoPlayer = null;
             }
-        } else if (hasAccessBoolean) {
-            // Se o player não existe mas o usuário tem acesso, cria o player
-            console.log('Criando player de vídeo para hodlers (não existia antes)');
-            createHodlerVideoPlayer();
-        }
-    }
-    
-    // Atualiza a mensagem do portal se estiver visível
-    if (portalMessageElement && portalMessageElement.style.display === 'block') {
-        if (currentLanguage === 'PT') {
-            portalMessageElement.innerHTML = hasAccessBoolean 
-                ? '<h2>Portal Multiverso</h2><p>Você tem acesso ao terreno exclusivo!</p><p>Bem-vindo ao Multiverso!</p>'
-                : '<h2>Portal Multiverso</h2><p>Acesso restrito!</p><p>Você precisa de um Multiverso Pass para acessar esta área.</p>';
-        } else {
-            portalMessageElement.innerHTML = hasAccessBoolean 
-                ? '<h2>Multiverso Portal</h2><p>You have access to the exclusive terrain!</p><p>Welcome to the Multiverso!</p>'
-                : '<h2>Multiverso Portal</h2><p>Restricted access!</p><p>You need a Multiverso Pass to access this area.</p>';
-        }
-    }
-    
-    // Força uma atualização da posição da nave para aplicar as novas regras de colisão
-    if (spaceship) {
-        // Verificar se a nave está na área restrita e o acesso foi revogado
-        const terrainLimit = 7000;
-        const isInRestrictedArea = spaceship.position.z < -terrainLimit;
-        
-        if (!hasAccessBoolean && isInRestrictedArea) {
-            console.log('Acesso revogado enquanto na área restrita. Teleportando para área segura...');
-            // Teleportar a nave de volta para a área segura, próximo ao portal
-            spaceship.position.set(0, 800, 0);
-            camera.position.set(0, 1000, 1200);
             
-            // Mostrar mensagem de aviso
-            showWarningMessage('Acesso revogado! Você foi teleportado para a área segura.');
-        } else {
-            // Aplica as novas regras de colisão imediatamente
-            const collisionResult = checkTerrainCollision(spaceship.position.clone());
-            spaceship.position.copy(collisionResult.position);
-        }
-        
-        console.log('Regras de colisão atualizadas para:', hasAccessBoolean ? 'Sem restrições laterais' : 'Com restrições laterais');
-    }
-}
-
-// Função para verificar explicitamente o status do Multiverso Pass
-function checkMultiversoPassStatus() {
-    // Verifica se a variável global está definida corretamente
-    // Verifica tanto hasMultiversoPass quanto hasAccess para compatibilidade
-    const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
-    
-    console.log('Verificação explícita do Multiverso Pass:', hasPass);
-    console.log('window.hasMultiversoPass =', window.hasMultiversoPass);
-    console.log('window.hasAccess =', window.hasAccess);
-    
-    // Armazena o status anterior para comparação
-    const previousStatus = window.previousAccessStatus;
-    
-    // Se o status mudou, força a atualização do player
-    if (previousStatus !== undefined && previousStatus !== hasPass) {
-        console.log('Status de acesso mudou de', previousStatus, 'para', hasPass);
-        // Força a atualização do player de vídeo
-        forceUpdateHodlerVideoPlayer();
-    }
-    
-    // Atualiza o status anterior
-    window.previousAccessStatus = hasPass;
-    
-    // Atualiza o acesso exclusivo com o status atual
-    updateExclusiveAccess(hasPass);
-    
-    return hasPass;
-}
-
-// Remove qualquer outro event listener que possa estar adicionando botões
-window.removeEventListener('load', window.configurarInteracaoUI);
-window.configurarInteracaoUI = undefined; 
-
-// Função para criar textura de lensflare proceduralmente
-function createLensflareTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    
-    // Limpa o canvas
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Cria gradiente radial para o lensflare
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = canvas.width / 2;
-    
-    // Gradiente principal
-    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-    gradient.addColorStop(0.1, 'rgba(255, 230, 200, 0.8)');
-    gradient.addColorStop(0.2, 'rgba(255, 200, 150, 0.5)');
-    gradient.addColorStop(0.3, 'rgba(255, 170, 100, 0.3)');
-    gradient.addColorStop(0.5, 'rgba(255, 120, 50, 0.1)');
-    gradient.addColorStop(1.0, 'rgba(255, 100, 50, 0.0)');
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Adiciona alguns círculos concêntricos
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 2;
-    
-    for (let i = 1; i < 5; i++) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius * i * 0.15, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    
-    // Adiciona alguns raios
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 3;
-    
-    for (let i = 0; i < 12; i++) {
-        const angle = (i / 12) * Math.PI * 2;
-        const startX = centerX + Math.cos(angle) * radius * 0.2;
-        const startY = centerY + Math.sin(angle) * radius * 0.2;
-        const endX = centerX + Math.cos(angle) * radius * 0.8;
-        const endY = centerY + Math.sin(angle) * radius * 0.8;
-        
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-    }
-    
-    // Cria textura a partir do canvas
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    
-    return texture;
-}
-
-// Função para criar textura de partícula de poeira proceduralmente
-function createDustParticleTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d');
-    
-    // Limpa o canvas
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Cria gradiente radial para a partícula
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = canvas.width / 2;
-    
-    // Gradiente principal
-    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
-    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
-    gradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.2)');
-    gradient.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
-    
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Cria textura a partir do canvas
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    
-    return texture;
-}
-
-// ... existing code ...
-function createMintButton() {
-    // Remover qualquer botão existente para evitar duplicatas
-    const existingButton = document.getElementById('mint-multiverso-pass-button');
-    if (existingButton) {
-        existingButton.remove();
-    }
-    
-    // Criar elemento DOM para o botão Mint como um link <a> para garantir clicabilidade
-    const mintButtonElement = document.createElement('a');
-    mintButtonElement.id = 'mint-multiverso-pass-button';
-    mintButtonElement.href = 'https://inscribenow.io/collections/38ad28c5d73e92ec';
-    mintButtonElement.target = '_blank'; // Abrir em nova aba
-    mintButtonElement.style.width = '400px'; // Botão mais largo
-    mintButtonElement.style.height = '100px'; // Botão mais alto
-    mintButtonElement.style.backgroundColor = '#FF6600'; // Cor laranja
-    mintButtonElement.style.border = '8px solid #FFD700'; // Borda dourada mais grossa
-    mintButtonElement.style.borderRadius = '20px'; // Bordas mais arredondadas
-    mintButtonElement.style.overflow = 'hidden';
-    mintButtonElement.style.cursor = 'pointer'; // Garantir que o cursor seja uma mão
-    mintButtonElement.style.pointerEvents = 'auto'; // Garantir que eventos de ponteiro sejam capturados
-    mintButtonElement.style.boxShadow = '0 0 30px #FFD700, 0 0 60px #FF6600'; // Brilho dourado mais intenso com duplo halo
-    mintButtonElement.style.transition = 'all 0.3s ease';
-    mintButtonElement.style.display = 'block'; // Garantir que seja um bloco
-    mintButtonElement.style.textDecoration = 'none'; // Remover sublinhado do link
-    
-    // Texto do botão
-    const textElement = document.createElement('div');
-    textElement.textContent = '🔥🔥 MINT MULTIVERSO PASS 🔥🔥'; // Mais emojis para chamar atenção
-    textElement.style.color = 'white';
-    textElement.style.padding = '10px';
-    textElement.style.fontSize = '24px'; // Texto maior
-    textElement.style.fontWeight = 'bold';
-    textElement.style.textAlign = 'center';
-    textElement.style.lineHeight = '80px'; // Ajustado para o novo tamanho
-    textElement.style.textShadow = '0 0 10px #FFD700, 0 0 20px #FFD700'; // Sombra de texto dourada mais intensa
-    mintButtonElement.appendChild(textElement);
-    
-    // Adicionar evento de hover
-    mintButtonElement.addEventListener('mouseover', function() {
-        this.style.backgroundColor = '#FF8C00'; // Laranja mais claro no hover
-        this.style.transform = 'scale(1.1)'; // Efeito de escala maior
-        this.style.boxShadow = '0 0 40px #FFD700, 0 0 80px #FF6600'; // Brilho mais intenso
-    });
-    
-    mintButtonElement.addEventListener('mouseout', function() {
-        this.style.backgroundColor = '#FF6600'; // Volta ao laranja original
-        this.style.transform = 'scale(1)';
-        this.style.boxShadow = '0 0 30px #FFD700, 0 0 60px #FF6600'; // Brilho normal
-    });
-    
-    // Adicionar evento de clique explícito para garantir que o link seja aberto
-    mintButtonElement.addEventListener('click', function(event) {
-        console.log('Botão Mint clicado! Abrindo link...');
-        window.open('https://inscribenow.io/collections/38ad28c5d73e92ec', '_blank');
-        event.stopPropagation(); // Impedir que o evento se propague para o renderer
-    });
-    
-    // Criar um wrapper para o botão para melhorar a clicabilidade
-    const buttonWrapper = document.createElement('div');
-    buttonWrapper.style.width = '100%';
-    buttonWrapper.style.height = '100%';
-    buttonWrapper.style.position = 'relative';
-    buttonWrapper.appendChild(mintButtonElement);
-    
-    // Criar objeto CSS3D para o wrapper do botão
-    const mintButtonObject = new CSS3DObject(buttonWrapper);
-    
-    // Posicionar o botão diretamente acima do portal
-    // O portal está em (0, 1600, -7000)
-    // A seta triângulo está em y = 2133 + 1600 (posição do portal)
-    const terrainLimit = 7000;
-    const portalY = 1600;
-    const markerY = 2133; // Altura da seta triângulo em relação ao portal
-    const markerMaxY = Math.sin(Date.now() * 0.002) * 267; // Altura máxima da animação da seta
-    
-    // Posicionar o botão 400 unidades acima da seta triângulo
-    // Isso garante que ele fique visível e alinhado com o portal
-    const buttonY = portalY + markerY + markerMaxY + 400;
-    mintButtonObject.position.set(0, buttonY, -terrainLimit);
-    
-    // Aumentar o tamanho do botão para garantir melhor visibilidade
-    mintButtonObject.scale.set(7, 7, 7);
-    
-    // Adicionar o botão à cena CSS
-    cssScene.add(mintButtonObject);
-    
-    // Adicionar luz de destaque para o botão (ajustada para a nova posição)
-    const mintButtonLight = new THREE.PointLight(0xFF6600, 3, 3000);
-    mintButtonLight.position.set(0, buttonY, -terrainLimit + 200);
-    scene.add(mintButtonLight);
-    
-    // Criar um grupo para conter a luz
-    const mintButtonGroup = new THREE.Group();
-    mintButtonGroup.add(mintButtonLight);
-    
-    // Animação pulsante para a luz
-    function animateMintButtonLight() {
-        mintButtonLight.intensity = 3 + Math.sin(Date.now() * 0.005) * 2; // Animação mais intensa
-        requestAnimationFrame(animateMintButtonLight);
-    }
-    
-    // Iniciar a animação da luz
-    animateMintButtonLight();
-    
-    // Adicionar evento global para garantir que o botão seja clicável
-    document.addEventListener('click', function(event) {
-        // Verificar se o clique foi no botão ou em seus elementos filhos
-        if (event.target === mintButtonElement || 
-            event.target === textElement || 
-            mintButtonElement.contains(event.target)) {
-            console.log('Clique global no botão Mint detectado! Abrindo link...');
-            window.open('https://inscribenow.io/collections/38ad28c5d73e92ec', '_blank');
-            event.stopPropagation(); // Impedir que o evento se propague
-        }
-    }, true); // Usar captura para garantir que o evento seja processado antes
-    
-    console.log("Botão Mint criado e posicionado em:", 0, buttonY, -terrainLimit);
-    
-    return mintButtonObject;
-}
-
-// ... existing code ...
-
-// Adicionar raycaster para detectar quando o mouse está sobre o botão
-
-// Função para verificar se o mouse está sobre o botão Mint
-function checkMintButtonHover(event) {
-    // Calcular a posição do mouse em coordenadas normalizadas (-1 a +1)
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-    
-    // Atualizar o raycaster com a posição do mouse e a câmera
-    uiRaycaster.setFromCamera(mouse, camera);
-    
-    // Verificar se o raio intersecta com o botão Mint
-    const mintButton = document.getElementById('mint-multiverso-pass-button');
-    if (mintButton) {
-        // Obter a posição do botão no espaço 3D
-        const terrainLimit = 7000;
-        const portalY = 1600;
-        const markerY = 2133; // Altura da seta triângulo em relação ao portal
-        const markerMaxY = Math.sin(Date.now() * 0.002) * 267; // Altura máxima da animação da seta
-        const buttonY = portalY + markerY + markerMaxY + 400;
-        const buttonPosition = new THREE.Vector3(0, buttonY, -terrainLimit);
-        
-        // Calcular a distância entre o raio e a posição do botão
-        const distance = uiRaycaster.ray.distanceToPoint(buttonPosition);
-        
-        // Se a distância for menor que um certo valor, consideramos que o mouse está sobre o botão
-        if (distance < 1500) { // Aumentamos a área de detecção
-            document.body.style.cursor = 'pointer'; // Mudar o cursor para uma mão
-        } else {
-            document.body.style.cursor = 'auto'; // Voltar o cursor para o padrão
-        }
-    }
-}
-
-// Adicionar evento de movimento do mouse para verificar hover no botão
-window.addEventListener('mousemove', checkMintButtonHover);
-
-// Função para criar o player de vídeo para hodlers
-function createHodlerVideoPlayer() {
-    console.log('Iniciando criação do player de vídeo para hodlers');
-    
-    // Verificar se já existe um player
-    if (hodlerVideoPlayer) {
-        console.log('Removendo player existente');
-        cssScene.remove(hodlerVideoPlayer);
-    }
-    
-    // Criar elemento DOM para o player (frente)
-    const playerElement = document.createElement('div');
-    playerElement.id = 'hodler-video-player';
-    playerElement.style.width = HODLER_VIDEO_WIDTH + 'px';
-    playerElement.style.height = HODLER_VIDEO_HEIGHT + 'px';
-    playerElement.style.backgroundColor = '#000000';
-    playerElement.style.border = '20px solid #3366cc';
-    playerElement.style.borderRadius = '15px';
-    playerElement.style.overflow = 'hidden';
-    playerElement.style.pointerEvents = 'auto'; // Importante: permite interação com o player
-    
-    // Criar elemento DOM para o player (verso - clone do primeiro)
-    const playerElementBack = playerElement.cloneNode(true);
-    playerElementBack.id = 'hodler-video-player-back';
-    
-    // Título do player (frente)
-    const titleElement = document.createElement('div');
-    titleElement.id = 'hodler-video-title';
-    titleElement.textContent = '🎓 ÁREA EXCLUSIVA - AULAS BITCOIN 🎓';
-    titleElement.style.backgroundColor = '#3366cc';
-    titleElement.style.color = 'white';
-    titleElement.style.padding = '15px';
-    titleElement.style.fontSize = '24px';
-    titleElement.style.fontWeight = 'bold';
-    titleElement.style.textAlign = 'center';
-    playerElement.appendChild(titleElement);
-    
-    // Título do player (verso)
-    const titleElementBack = titleElement.cloneNode(true);
-    titleElementBack.id = 'hodler-video-title-back';
-    playerElementBack.appendChild(titleElementBack);
-    
-    // Container para o vídeo atual (frente)
-    const videoContainer = document.createElement('div');
-    videoContainer.id = 'hodler-video-container';
-    videoContainer.style.width = '100%';
-    videoContainer.style.height = (HODLER_VIDEO_HEIGHT - 170) + 'px'; // Altura ajustada para acomodar controles
-    videoContainer.style.backgroundColor = '#000';
-    videoContainer.style.position = 'relative';
-    playerElement.appendChild(videoContainer);
-    
-    // Container para o vídeo atual (verso)
-    const videoContainerBack = videoContainer.cloneNode(true);
-    videoContainerBack.id = 'hodler-video-container-back';
-    playerElementBack.appendChild(videoContainerBack);
-    
-    // Wrapper responsivo para o iframe (frente)
-    const responsiveWrapper = document.createElement('div');
-    responsiveWrapper.style.position = 'relative';
-    responsiveWrapper.style.paddingTop = '56.25%'; // 16:9 aspect ratio
-    responsiveWrapper.style.width = '100%';
-    responsiveWrapper.style.height = '100%';
-    videoContainer.appendChild(responsiveWrapper);
-    
-    // Wrapper responsivo para o iframe (verso)
-    const responsiveWrapperBack = responsiveWrapper.cloneNode(true);
-    videoContainerBack.appendChild(responsiveWrapperBack);
-    
-    // Iframe do vídeo atual (frente)
-    const iframe = document.createElement('iframe');
-    iframe.id = 'hodler-video-iframe';
-    iframe.style.border = 'none';
-    iframe.style.position = 'absolute';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.src = hodlerVideos[currentVideoIndex].url;
-    iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
-    iframe.allowFullscreen = true;
-    iframe.loading = 'lazy';
-    responsiveWrapper.appendChild(iframe);
-    
-    // Iframe do vídeo atual (verso)
-    const iframeBack = iframe.cloneNode(true);
-    iframeBack.id = 'hodler-video-iframe-back';
-    responsiveWrapperBack.appendChild(iframeBack);
-    
-    // Container para a lista de vídeos (frente)
-    const listContainer = document.createElement('div');
-    listContainer.id = 'hodler-video-list-container';
-    listContainer.style.width = '100%';
-    listContainer.style.height = '100px';
-    listContainer.style.backgroundColor = '#222';
-    listContainer.style.overflowX = 'auto';
-    listContainer.style.overflowY = 'hidden';
-    listContainer.style.whiteSpace = 'nowrap';
-    listContainer.style.padding = '10px 0';
-    listContainer.style.display = 'flex';
-    listContainer.style.alignItems = 'center';
-    playerElement.appendChild(listContainer);
-    
-    // Container para a lista de vídeos (verso)
-    const listContainerBack = listContainer.cloneNode(true);
-    listContainerBack.id = 'hodler-video-list-container-back';
-    playerElementBack.appendChild(listContainerBack);
-    
-    // Adicionar miniaturas de vídeos à lista (frente)
-    hodlerVideos.forEach((video, index) => {
-        const thumbnail = document.createElement('div');
-        thumbnail.className = 'hodler-video-thumbnail';
-        thumbnail.style.display = 'inline-block';
-        thumbnail.style.minWidth = '160px';
-        thumbnail.style.height = '90px';
-        thumbnail.style.margin = '0 5px';
-        thumbnail.style.backgroundColor = index === currentVideoIndex ? '#3366cc' : '#444';
-        thumbnail.style.color = 'white';
-        thumbnail.style.textAlign = 'center';
-        thumbnail.style.cursor = 'pointer';
-        thumbnail.style.borderRadius = '5px';
-        thumbnail.style.overflow = 'hidden';
-        thumbnail.style.fontSize = '14px';
-        thumbnail.style.fontWeight = 'bold';
-        thumbnail.style.textOverflow = 'ellipsis';
-        thumbnail.style.whiteSpace = 'normal';
-        thumbnail.style.display = 'inline-flex';
-        thumbnail.style.alignItems = 'center';
-        thumbnail.style.justifyContent = 'center';
-        thumbnail.style.padding = '0 10px';
-        thumbnail.style.flexShrink = '0';
-        thumbnail.textContent = video.title;
-        thumbnail.dataset.index = index;
-        
-        thumbnail.addEventListener('click', function() {
-            changeHodlerVideo(parseInt(this.dataset.index));
-        });
-        
-        listContainer.appendChild(thumbnail);
-    });
-    
-    // Adicionar miniaturas de vídeos à lista (verso)
-    hodlerVideos.forEach((video, index) => {
-        const thumbnail = document.createElement('div');
-        thumbnail.className = 'hodler-video-thumbnail';
-        thumbnail.style.display = 'inline-block';
-        thumbnail.style.minWidth = '160px';
-        thumbnail.style.height = '90px';
-        thumbnail.style.margin = '0 5px';
-        thumbnail.style.backgroundColor = index === currentVideoIndex ? '#3366cc' : '#444';
-        thumbnail.style.color = 'white';
-        thumbnail.style.textAlign = 'center';
-        thumbnail.style.cursor = 'pointer';
-        thumbnail.style.borderRadius = '5px';
-        thumbnail.style.overflow = 'hidden';
-        thumbnail.style.fontSize = '14px';
-        thumbnail.style.fontWeight = 'bold';
-        thumbnail.style.textOverflow = 'ellipsis';
-        thumbnail.style.whiteSpace = 'normal';
-        thumbnail.style.display = 'inline-flex';
-        thumbnail.style.alignItems = 'center';
-        thumbnail.style.justifyContent = 'center';
-        thumbnail.style.padding = '0 10px';
-        thumbnail.style.flexShrink = '0';
-        thumbnail.textContent = video.title;
-        thumbnail.dataset.index = index;
-        
-        thumbnail.addEventListener('click', function() {
-            changeHodlerVideo(parseInt(this.dataset.index));
-        });
-        
-        listContainerBack.appendChild(thumbnail);
-    });
-    
-    // Criar grupo para conter os dois lados do player
-    const playerGroup = new THREE.Group();
-    playerGroup.name = 'hodlerVideoPlayerGroup'; // Nome para facilitar depuração
-    
-    // Criar objeto CSS3D para frente
-    const playerObject = new CSS3DObject(playerElement);
-    playerObject.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z);
-    playerObject.scale.set(3, 3, 3);
-    // Rotacionar para ficar paralelo ao terreno
-    playerObject.rotation.x = Math.PI / 8; // Inclinação leve para melhor visualização
-    playerObject.name = 'hodlerVideoPlayerFront'; // Nome para facilitar depuração
-    
-    // Criar objeto CSS3D para verso (igual à frente)
-    const playerObjectBack = new CSS3DObject(playerElementBack);
-    playerObjectBack.position.set(HODLER_VIDEO_POSITION.x, HODLER_VIDEO_POSITION.y, HODLER_VIDEO_POSITION.z - 1); // Posição ligeiramente atrás
-    playerObjectBack.scale.set(3, 3, 3);
-    playerObjectBack.rotation.x = Math.PI / 8; // Mesma inclinação que a frente
-    playerObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
-    playerObjectBack.name = 'hodlerVideoPlayerBack'; // Nome para facilitar depuração
-    
-    // Adiciona os dois lados ao grupo
-    playerGroup.add(playerObject);
-    playerGroup.add(playerObjectBack);
-    
-    // Adiciona o grupo à cena CSS3D
-    cssScene.add(playerGroup);
-    hodlerVideoPlayer = playerGroup;
-    
-    console.log('Player adicionado à cena CSS3D:', playerGroup);
-    
-    // Adiciona luzes mais intensas para o player
-    const spotLight1 = new THREE.SpotLight(0x3366cc, 5);
-    spotLight1.position.set(HODLER_VIDEO_POSITION.x - 400, HODLER_VIDEO_POSITION.y + 500, HODLER_VIDEO_POSITION.z + 500);
-    spotLight1.target.position.copy(playerObject.position);
-    spotLight1.angle = Math.PI / 6;
-    spotLight1.penumbra = 0.2;
-    spotLight1.decay = 1;
-    spotLight1.distance = 5000;
-    scene.add(spotLight1);
-    scene.add(spotLight1.target);
-    
-    const spotLight2 = new THREE.SpotLight(0x3366cc, 5);
-    spotLight2.position.set(HODLER_VIDEO_POSITION.x + 400, HODLER_VIDEO_POSITION.y + 500, HODLER_VIDEO_POSITION.z + 500);
-    spotLight2.target.position.copy(playerObject.position);
-    spotLight2.angle = Math.PI / 6;
-    spotLight2.penumbra = 0.2;
-    spotLight2.decay = 1;
-    spotLight2.distance = 5000;
-    scene.add(spotLight2);
-    scene.add(spotLight2.target);
-    
-    // Adiciona um halo ao redor do player
-    const haloGeometry = new THREE.PlaneGeometry(HODLER_VIDEO_WIDTH * 3.5, HODLER_VIDEO_HEIGHT * 3.5);
-    const haloMaterial = new THREE.MeshBasicMaterial({
-        color: 0x3366cc,
-        transparent: true,
-        opacity: 0.4,
-        side: THREE.DoubleSide
-    });
-    
-    // Cria halos para ambos os lados
-    const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-    const haloBack = new THREE.Mesh(haloGeometry, haloMaterial.clone());
-    
-    halo.position.copy(playerObject.position);
-    halo.position.z += 10;
-    halo.rotation.x = Math.PI / 8; // Mesma inclinação que o player
-    
-    haloBack.position.copy(playerObjectBack.position);
-    haloBack.position.z -= 10;
-    haloBack.rotation.x = Math.PI / 8; // Mesma inclinação
-    haloBack.rotation.y = Math.PI;
-    haloBack.scale.x = -1; // Espelha o halo traseiro também
-    
-    scene.add(halo);
-    scene.add(haloBack);
-    
-    // Animar os halos com efeito pulsante mais visível
-    function animateHalo() {
-        requestAnimationFrame(animateHalo);
-        const opacity = 0.4 + Math.sin(Date.now() * 0.003) * 0.3;
-        halo.material.opacity = opacity;
-        haloBack.material.opacity = opacity;
-    }
-    animateHalo();
-    
-    // Garantir que o player seja visível mesmo quando o usuário tem acesso
-    const hasAccessBoolean = window.hasMultiversoPass === true || window.hasAccess === true;
-    hodlerVideoPlayer.visible = hasAccessBoolean;
-    console.log('Player de vídeo para hodlers inicializado. Visibilidade:', hasAccessBoolean);
-    console.log('Status de acesso: window.hasMultiversoPass =', window.hasMultiversoPass, 'window.hasAccess =', window.hasAccess);
-    
-    // Força uma renderização imediata para garantir que o player seja exibido
-    if (cssRenderer && cssScene && camera) {
-        cssRenderer.render(cssScene, camera);
-        console.log('Renderização forçada da cena CSS3D após criar o player');
-    }
-    
-    return { playerGroup, playerObject, playerObjectBack, halo, haloBack };
-}
-
-// Função para trocar o vídeo atual
-function changeHodlerVideo(index) {
-    if (index < 0 || index >= hodlerVideos.length) return;
-    
-    currentVideoIndex = index;
-    
-    // Atualizar iframe com o novo vídeo
-    const iframe = document.getElementById('hodler-video-iframe');
-    const iframeBack = document.getElementById('hodler-video-iframe-back');
-    
-    if (iframe && iframeBack) {
-        iframe.src = hodlerVideos[index].url;
-        iframeBack.src = hodlerVideos[index].url;
-        
-        // Atualizar destaque nas miniaturas
-        const thumbnails = document.querySelectorAll('.hodler-video-thumbnail');
-        thumbnails.forEach((thumbnail, i) => {
-            thumbnail.style.backgroundColor = i === index ? '#3366cc' : '#444';
-        });
-    }
-}
-
-// ... existing code ...
-
-// Função para exibir mensagens de aviso
-function showWarningMessage(message) {
-    const statusMsg = document.createElement('div');
-    statusMsg.style.position = 'fixed';
-    statusMsg.style.top = '50%';
-    statusMsg.style.left = '50%';
-    statusMsg.style.transform = 'translate(-50%, -50%)';
-    statusMsg.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    statusMsg.style.color = '#ff0000';
-    statusMsg.style.padding = '20px';
-    statusMsg.style.borderRadius = '10px';
-    statusMsg.style.fontFamily = 'Arial';
-    statusMsg.style.fontSize = '24px';
-    statusMsg.style.zIndex = '1000';
-    statusMsg.innerHTML = '⚠️ ' + message;
-    document.body.appendChild(statusMsg);
-    
-    // Remove a mensagem após 5 segundos
-    setTimeout(() => {
-        document.body.removeChild(statusMsg);
-    }, 5000);
-}
-
-// ... existing code ...
-// Função para forçar a atualização do player de vídeo
-function forceUpdateHodlerVideoPlayer() {
-    console.log('Forçando atualização do player de vídeo');
-    
-    // Verifica se o usuário tem acesso
-    const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
-    console.log('Status de acesso ao forçar atualização:', hasAccess);
-    
-    // Se o player já existe, remove-o para recriar
-    if (hodlerVideoPlayer) {
-        console.log('Removendo player existente para recriar');
-        cssScene.remove(hodlerVideoPlayer);
-        hodlerVideoPlayer = null;
-    }
-    
-    // Cria um novo player
-    createHodlerVideoPlayer();
-    
-    // Garante que a visibilidade esteja correta
-    if (hodlerVideoPlayer) {
-        hodlerVideoPlayer.visible = hasAccess;
-        console.log('Player recriado com visibilidade:', hasAccess);
-        
-        // Força uma renderização imediata
-        if (cssRenderer && cssScene && camera) {
-            cssRenderer.render(cssScene, camera);
+            // Cria um novo player com um atraso para garantir que tudo esteja inicializado
+            setTimeout(() => {
+                console.log('[DEBUG] Criando novo player após concessão de acesso');
+                createHodlerVideoPlayer();
+                
+                // Força uma renderização imediata após criar o player
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                    console.log('[DEBUG] Renderização forçada após criar o player');
+                }
+                
+                // Verifica se o player foi criado com sucesso
+                if (hodlerVideoPlayer) {
+                    console.log('[DEBUG] Player criado com sucesso, visibilidade =', hodlerVideoPlayer.visible);
+                } else {
+                    console.log('[DEBUG] FALHA ao criar o player!');
+                }
+            }, 500);
+        } else if (hodlerVideoPlayer) {
+            // Se o acesso foi revogado e o player existe, oculta-o
+            console.log('[DEBUG] Acesso revogado, ocultando player de vídeo');
             console.log('Renderização forçada da cena CSS3D');
         }
     }
