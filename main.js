@@ -1659,269 +1659,56 @@ function createPortalMessage() {
 
 // Animation loop
 function animate() {
-    requestAnimationFrame(animate);
-    
     try {
-        const delta = clock.getDelta();
+        requestAnimationFrame(animate);
         
-        // Verifica periodicamente o status do Multiverso Pass (a cada 5 segundos)
-        if (!window.lastPassCheck || Date.now() - window.lastPassCheck > 5000) {
-            window.lastPassCheck = Date.now();
-            checkMultiversoPassStatus();
+        // Atualizar controles
+        if (controls) {
+            controls.update();
         }
         
-        // Não precisamos mais atualizar o botão Mint, pois ele agora é um elemento HTML fixo
+        // Verificar acesso ao terreno exclusivo
+        const terrainLimit = 7000;
+        const isInRestrictedArea = spaceship && spaceship.position.z < -terrainLimit;
         
-        // Atualiza a nave se existir
-        if (spaceship && mysticalPortal) {
-            // Adiciona rotação contínua da nave
-            spaceship.rotation.y = targetRotationY + Math.PI + (Date.now() * 0.0001); // Rotação lenta e contínua
-
-            // Calcula a velocidade base e velocidade com sprint
-            const baseSpeed = 4000;
-            const currentSpeed = sprint ? baseSpeed * 2 : baseSpeed;
-            
-            // Calcula o movimento da nave
-            const movement = new THREE.Vector3(0, 0, 0);
-            
-            // Direção para frente/trás
-            if (moveForward) {
-                movement.z = -currentSpeed * delta;
-            }
-            if (moveBackward) {
-                movement.z = currentSpeed * delta;
-            }
-            
-            // Direção para os lados
-            if (moveLeft) {
-                movement.x = -currentSpeed * delta;
-            }
-            if (moveRight) {
-                movement.x = currentSpeed * delta;
-            }
-            
-            // Movimento vertical
-            if (moveUp) {
-                movement.y = currentSpeed * delta;
-            }
-            if (moveDown) {
-                movement.y = -currentSpeed * delta;
-            }
-            
-            // Aplica o movimento vertical baseado no mouse
-            movement.y += verticalSpeed * delta;
-            
-            // Aplica amortecimento na velocidade vertical
-            verticalSpeed *= verticalDamping;
-            
-            // Aplica a rotação ao movimento
-            movement.applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRotationY);
-            
-            // Calcula próxima posição
-            const nextPosition = spaceship.position.clone().add(movement);
-            
-            // Verifica colisões e obtém posição final
-            const collisionResult = checkTerrainCollision(nextPosition);
-            
-            // Atualiza posição da nave se não houver colisão com o stream
-            const streamBox = new THREE.Box3().setFromObject(streamScreen);
-            const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
-            
-            // Verifica colisão com o player de vídeo exclusivo (apenas se estiver visível)
-            let exclusiveVideoCollision = false;
-            if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup && exclusiveVideoPlayer.videoGroup.visible) {
-                // Verifica colisão com o grupo CSS3D
-                const exclusiveVideoBox = new THREE.Box3().setFromObject(exclusiveVideoPlayer.videoGroup);
-                exclusiveVideoCollision = exclusiveVideoBox.intersectsBox(spaceshipBox);
-                
-                // Verifica também colisão com o plano de backup (caso o CSS3D não funcione)
-                if (!exclusiveVideoCollision && exclusiveVideoPlayer.plane) {
-                    const planeBBox = new THREE.Box3().setFromObject(exclusiveVideoPlayer.plane);
-                    exclusiveVideoCollision = planeBBox.intersectsBox(spaceshipBox);
-                }
-                
-                // Se houver colisão, indica com um efeito visual (muda a cor do marcador)
-                if (exclusiveVideoCollision && exclusiveVideoPlayer.marker) {
-                    exclusiveVideoPlayer.marker.material.color.set(0xff0000); // Vermelho quando há colisão
-                    // Restaura a cor após 500ms
-                    setTimeout(() => {
-                        if (exclusiveVideoPlayer && exclusiveVideoPlayer.marker) {
-                            exclusiveVideoPlayer.marker.material.color.set(0x9932CC);
-                        }
-                    }, 500);
-                }
-            }
-            
-            // Atualiza a posição apenas se não houver colisão com nenhum dos players
-            if (!streamBox.intersectsBox(spaceshipBox) && !exclusiveVideoCollision) {
-                spaceship.position.copy(collisionResult.position);
-            }
-            
-            // Atualiza rotação da nave
-            spaceship.rotation.y = targetRotationY + Math.PI; // Adiciona PI para manter os propulsores para trás
-            
-            // Posiciona a câmera atrás da nave com suavização apenas na câmera
-            const cameraOffset = new THREE.Vector3(0, 200, 1200);
-            cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), targetRotationY);
-            
-            const desiredCameraPosition = spaceship.position.clone().add(cameraOffset);
-            camera.position.lerp(desiredCameraPosition, 0.1);
-            
-            // Faz a câmera olhar para a nave
-            const lookAtPosition = spaceship.position.clone();
-            lookAtPosition.y += 50;
-            camera.lookAt(lookAtPosition);
-            
-            // Garante que a nave sempre fique visível
-            spaceship.traverse((child) => {
-                if (child.isMesh) {
-                    child.renderOrder = 1; // Força a nave a ser renderizada por último
-                    child.material.depthTest = true;
-                    child.material.depthWrite = true;
-                    child.material.transparent = true;
-                    child.material.opacity = 1;
-                }
-            });
-
-            // Verifica distância até o portal
-            const distanceToPortal = spaceship.position.distanceTo(mysticalPortal.position);
-            
-            if (distanceToPortal < 2000) {
-                // Verifica o status do Multiverso Pass a cada aproximação do portal
-                console.log('Próximo ao portal. Status do Multiverso Pass:', window.hasMultiversoPass);
-                
-                if (!portalMessageElement.style.display || portalMessageElement.style.display === 'none') {
-                    // Mostra a mensagem do portal
-                    portalMessageElement.style.display = 'block';
-                    
-                    // Atualiza a mensagem do portal com base no status atual
-                    // Usa diretamente a função updateExclusiveAccess para garantir consistência
-                    updateExclusiveAccess(window.hasMultiversoPass);
-                }
-
-                // Adiciona listener para a tecla E se ainda não existir
-                if (!window.portalKeyListener) {
-                    window.portalKeyListener = true;
-                    
-                    // Remove qualquer listener anterior para evitar duplicação
-                    window.removeEventListener('keydown', window.portalKeyHandler);
-                    
-                    // Cria um novo handler e o armazena para poder removê-lo depois
-                    window.portalKeyHandler = function(event) {
-                        // Verifica novamente o status do Multiverso Pass no momento da tecla
-                        if (event.code === 'KeyE') {
-                            console.log('Tecla E pressionada. Status do Multiverso Pass:', window.hasMultiversoPass);
-                            
-                            if (window.hasMultiversoPass === true) {
-                                console.log('Atravessando o portal...');
-                                const terrainLimit = 7000;
-                                
-                                // Cria um elemento de fade para transição suave
-                                const fadeElement = document.createElement('div');
-                                fadeElement.style.position = 'fixed';
-                                fadeElement.style.top = '0';
-                                fadeElement.style.left = '0';
-                                fadeElement.style.width = '100%';
-                                fadeElement.style.height = '100%';
-                                fadeElement.style.backgroundColor = '#000000';
-                                fadeElement.style.opacity = '0';
-                                fadeElement.style.transition = 'opacity 1s ease-in-out';
-                                fadeElement.style.zIndex = '9999';
-                                document.body.appendChild(fadeElement);
-                                
-                                // Inicia a animação de fade in
-                                setTimeout(() => {
-                                    fadeElement.style.opacity = '1';
-                                }, 50);
-                                
-                                // Teleporta a nave após o fade in
-                                setTimeout(() => {
-                                    // Teleporta a nave para logo após o portal
-                                    spaceship.position.z = -terrainLimit - 1000; // Apenas 1000 unidades após o portal
-                                    camera.position.z = spaceship.position.z + 1200;
-                                    
-                                    // Esconde a mensagem do portal após atravessar
-                                    portalMessageElement.style.display = 'none';
-                                    
-                                    // Garante que as regras de colisão estejam corretas após o teleporte
-                                    updateExclusiveAccess(true);
-                                    
-                                    // Inicia o fade out
-                                    setTimeout(() => {
-                                        fadeElement.style.opacity = '0';
-                                        
-                                        // Remove o elemento após o fade out
-                                        setTimeout(() => {
-                                            document.body.removeChild(fadeElement);
-                                        }, 1000);
-                                    }, 500);
-                                }, 1000);
-                            } else {
-                                console.log('Acesso negado: Multiverso Pass não detectado');
-                                // Mostra mensagem de acesso negado por mais tempo
-                                portalMessageElement.innerHTML = `
-                                    <h2 style="color: #ff0000; margin-bottom: 15px;">🚫 Acesso Negado 🚫</h2>
-                                    <p>Você precisa do Multiverso Pass para acessar esta área.</p>
-                                `;
-                            }
-                        }
-                    };
-                    
-                    // Adiciona o novo handler
-                    window.addEventListener('keydown', window.portalKeyHandler);
-                }
-            } else {
-                if (portalMessageElement.style.display === 'block') {
-                    portalMessageElement.style.display = 'none';
-                }
-            }
-
-            // Adiciona verificação de altura do terreno exclusivo
-            if (exclusiveLunarTerrain && exclusiveLunarTerrain.visible) {
-                // Verifica se o usuário tem o Multiverso Pass
-                if (window.hasMultiversoPass === true) {
-                    // Apenas verifica a altura do terreno exclusivo para evitar atravessar o solo
-                    raycaster.set(spaceship.position, downVector);
-                    const exclusiveIntersects = raycaster.intersectObject(exclusiveLunarTerrain);
-                    
-                    if (exclusiveIntersects.length > 0) {
-                        // Mantém a nave acima do terreno exclusivo
-                        const exclusiveHeight = exclusiveIntersects[0].point.y + 400;
-                        
-                        // Aplica apenas a restrição de altura, sem restrições laterais
-                        if (spaceship.position.y < exclusiveHeight) {
-                            spaceship.position.y = exclusiveHeight;
-                        }
-                    }
-                } else {
-                    // Se o usuário não tem o Multiverso Pass, o terreno exclusivo não deveria estar visível
-                    // Mas por segurança, vamos garantir que ele não seja usado
-                    exclusiveLunarTerrain.visible = false;
-                    
-                    // Esconde também o player de vídeo exclusivo
-                    if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
-                        exclusiveVideoPlayer.videoGroup.visible = false;
-                        if (exclusiveVideoPlayer.particles) {
-                            exclusiveVideoPlayer.particles.visible = false;
-                        }
-                        console.log('Player de vídeo exclusivo escondido: usuário sem Multiverso Pass');
-                    }
-                    
-                    console.log('Terreno exclusivo ocultado: usuário sem Multiverso Pass');
-                }
-            }
+        // Verificar se o usuário tem um Multiverso Pass
+        const hasMultiversoPass = window.hasMultiversoPass === true || window.hasAccess === true;
+        
+        // Esconder terreno exclusivo e player se o usuário não tiver um Multiverso Pass
+        if (exclusiveLunarTerrain) {
+            exclusiveLunarTerrain.visible = hasMultiversoPass;
         }
-
-        // Renderiza as cenas
+        
+        // Garantir que o player exclusivo esteja visível para usuários com acesso
+        if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+            // Verificar se o player está na cena CSS3D
+            if (hasMultiversoPass && cssScene && !cssScene.children.includes(exclusiveVideoPlayer.videoGroup)) {
+                console.log('🔴 ALERTA: Player exclusivo não está na cena CSS3D durante animação! Readicionando...');
+                cssScene.add(exclusiveVideoPlayer.videoGroup);
+            }
+            
+            // Garantir visibilidade correta
+            exclusiveVideoPlayer.videoGroup.visible = hasMultiversoPass;
+            
+            // Garantir que os elementos visuais auxiliares estejam visíveis
+            if (exclusiveVideoPlayer.marker) exclusiveVideoPlayer.marker.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.particles) exclusiveVideoPlayer.particles.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.halo) exclusiveVideoPlayer.halo.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.plane) exclusiveVideoPlayer.plane.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.ambientLight) exclusiveVideoPlayer.ambientLight.visible = hasMultiversoPass;
+        }
+        
+        // Renderizar a cena principal
         if (renderer && scene && camera) {
             renderer.render(scene, camera);
         }
+        
+        // Renderizar a cena CSS3D
         if (cssRenderer && cssScene && camera) {
             cssRenderer.render(cssScene, camera);
         }
-
     } catch (error) {
-        console.error("Error in animation loop:", error);
+        console.error('Erro na animação:', error);
     }
 }
 
@@ -2087,213 +1874,115 @@ init();
 
 // Atualiza a função de verificação do Multiverso Pass
 function updateExclusiveAccess(hasAccess) {
-    console.log('Atualizando acesso exclusivo:', hasAccess);
+    console.log('🔵 Atualizando acesso exclusivo:', hasAccess ? 'COM ACESSO' : 'SEM ACESSO');
     
-    // Força a conversão para booleano para evitar problemas com valores undefined ou null
-    const hasAccessBoolean = hasAccess === true;
-    
-    // Atualiza a variável global de forma explícita
-    window.hasMultiversoPass = hasAccessBoolean;
-    window.hasAccess = hasAccessBoolean; // Atualiza também hasAccess para compatibilidade
-    
-    console.log('Após atualização: window.hasMultiversoPass =', window.hasMultiversoPass);
-    console.log('Após atualização: window.hasAccess =', window.hasAccess);
-    
-    // Garante que o terreno exclusivo seja atualizado
-    if (exclusiveLunarTerrain) {
-        // Atualiza a visibilidade do terreno exclusivo
-        exclusiveLunarTerrain.visible = hasAccessBoolean;
-        console.log('Terreno exclusivo visível:', exclusiveLunarTerrain.visible);
-    }
-    
-    // Gerencia o player de vídeo exclusivo
-    if (hasAccessBoolean) {
-        // Se o usuário tem acesso e o player ainda não existe, cria-o
-        if (!exclusiveVideoPlayer) {
-            console.log('🔵 Criando player exclusivo pela primeira vez');
-            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+    try {
+        // Atualizar visibilidade do terreno exclusivo
+        if (exclusiveLunarTerrain) {
+            exclusiveLunarTerrain.visible = hasAccess;
+            console.log('🔵 Terreno exclusivo:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
         } else {
-            // Se já existe, garante que todos os componentes estejam visíveis
-            console.log('🔵 Player exclusivo já existe, tornando-o visível');
-            
-            // Garantir que o grupo principal esteja visível
+            console.log('🔴 Terreno exclusivo não encontrado!');
+        }
+        
+        // Atualizar visibilidade do player de vídeo exclusivo
+        if (exclusiveVideoPlayer) {
+            // Garantir que o grupo de vídeo esteja visível para usuários com acesso
             if (exclusiveVideoPlayer.videoGroup) {
-                exclusiveVideoPlayer.videoGroup.visible = true;
+                exclusiveVideoPlayer.videoGroup.visible = hasAccess;
+                console.log('🔵 Grupo de vídeo exclusivo:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
                 
-                // Verificar se ainda está na cena CSS3D, caso contrário, readicionar
-                if (!cssScene.children.includes(exclusiveVideoPlayer.videoGroup)) {
-                    console.log('🔴 Player exclusivo não encontrado na cena CSS3D! Readicionando...');
+                // Forçar a renderização CSS3D para garantir que as mudanças sejam aplicadas
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                    console.log('🔵 Forçando renderização CSS3D após atualização de visibilidade');
+                }
+            } else {
+                console.log('🔴 Grupo de vídeo exclusivo não encontrado!');
+            }
+            
+            // Atualizar visibilidade dos elementos visuais auxiliares
+            if (exclusiveVideoPlayer.marker) {
+                exclusiveVideoPlayer.marker.visible = hasAccess;
+                console.log('🔵 Marcador de vídeo exclusivo:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
+            }
+            
+            if (exclusiveVideoPlayer.particles) {
+                exclusiveVideoPlayer.particles.visible = hasAccess;
+                console.log('🔵 Partículas de vídeo exclusivo:', hasAccess ? 'VISÍVEIS' : 'INVISÍVEIS');
+            }
+            
+            if (exclusiveVideoPlayer.halo) {
+                exclusiveVideoPlayer.halo.visible = hasAccess;
+                console.log('🔵 Halo de vídeo exclusivo:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
+            }
+            
+            if (exclusiveVideoPlayer.plane) {
+                exclusiveVideoPlayer.plane.visible = hasAccess;
+                console.log('🔵 Plano de backup de vídeo exclusivo:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
+            }
+            
+            if (exclusiveVideoPlayer.ambientLight) {
+                exclusiveVideoPlayer.ambientLight.visible = hasAccess;
+                console.log('🔵 Luz ambiente de vídeo exclusivo:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
+            }
+            
+            // Se o usuário tem acesso, verificar se o player está realmente na cena CSS3D
+            if (hasAccess && exclusiveVideoPlayer.videoGroup && cssScene) {
+                const isInScene = cssScene.children.includes(exclusiveVideoPlayer.videoGroup);
+                if (!isInScene) {
+                    console.log('🔴 ALERTA: Player exclusivo não está na cena CSS3D! Readicionando...');
                     cssScene.add(exclusiveVideoPlayer.videoGroup);
                     
-                    // Força uma re-renderização imediata
-                    cssRenderer.render(cssScene, camera);
+                    // Forçar a renderização CSS3D após readicionar
+                    if (cssRenderer && camera) {
+                        cssRenderer.render(cssScene, camera);
+                        console.log('🔵 Forçando renderização CSS3D após readicionar o player');
+                    }
                 }
             }
             
-            // Garantir que todos os componentes visuais estejam visíveis
-            if (exclusiveVideoPlayer.particles) {
-                exclusiveVideoPlayer.particles.visible = true;
-            }
-            if (exclusiveVideoPlayer.marker) {
-                exclusiveVideoPlayer.marker.visible = true;
-            }
-            if (exclusiveVideoPlayer.halo) {
-                exclusiveVideoPlayer.halo.visible = true;
-            }
-            if (exclusiveVideoPlayer.plane) {
-                exclusiveVideoPlayer.plane.visible = true;
-            }
-            if (exclusiveVideoPlayer.ambientLight) {
-                exclusiveVideoPlayer.ambientLight.visible = true;
-            }
-            
-            // Garantir que a posição esteja correta
-            if (exclusiveVideoPlayer.position) {
-                const pos = exclusiveVideoPlayer.position;
-                
-                // Atualizar posição do videoObject e videoObjectBack se existirem
-                if (exclusiveVideoPlayer.videoObject) {
-                    exclusiveVideoPlayer.videoObject.position.set(pos.x, pos.y, pos.z);
-                }
-                if (exclusiveVideoPlayer.videoObjectBack) {
-                    exclusiveVideoPlayer.videoObjectBack.position.set(pos.x, pos.y, pos.z - 1);
-                }
-                
-                // Verificar e atualizar as posições dos elementos visuais
-                if (exclusiveVideoPlayer.marker) {
-                    exclusiveVideoPlayer.marker.position.set(pos.x, pos.y + 400, pos.z);
-                }
-                if (exclusiveVideoPlayer.plane) {
-                    exclusiveVideoPlayer.plane.position.set(pos.x, pos.y, pos.z + 10);
-                }
-                if (exclusiveVideoPlayer.halo) {
-                    exclusiveVideoPlayer.halo.position.set(pos.x, pos.y, pos.z - 50);
-                }
-                if (exclusiveVideoPlayer.ambientLight) {
-                    exclusiveVideoPlayer.ambientLight.position.set(pos.x, pos.y, pos.z);
-                }
-                
-                console.log('🔵 Posição do player exclusivo reajustada para:', pos.x, pos.y, pos.z);
-            }
-            
-            // Verificar os elementos DOM
-            if (exclusiveVideoPlayer.domElements) {
+            // Verificar se os elementos DOM ainda existem
+            if (hasAccess && exclusiveVideoPlayer.domElements) {
                 const { front, back } = exclusiveVideoPlayer.domElements;
-                
-                // Garantir que os elementos DOM ainda existam
-                if (!document.body.contains(front)) {
-                    console.log('🔴 Elemento DOM frontal não encontrado, readicionando...');
+                if (front && !document.body.contains(front)) {
+                    console.log('🔴 ALERTA: Elemento DOM frontal não está no documento! Readicionando...');
                     document.body.appendChild(front);
-                    front.style.position = 'absolute';
-                    front.style.left = '-9999px';
                 }
                 
-                if (!document.body.contains(back)) {
-                    console.log('🔴 Elemento DOM traseiro não encontrado, readicionando...');
+                if (back && !document.body.contains(back)) {
+                    console.log('🔴 ALERTA: Elemento DOM traseiro não está no documento! Readicionando...');
                     document.body.appendChild(back);
-                    back.style.position = 'absolute';
-                    back.style.left = '-9999px';
                 }
             }
-            
-            console.log('🔵 Player de vídeo exclusivo está visível para hodler');
-        }
-    } else {
-        // Se o usuário não tem acesso e o player existe, esconde todos os componentes
-        if (exclusiveVideoPlayer) {
-            console.log('🔵 Escondendo player exclusivo - usuário sem acesso');
-            
-            if (exclusiveVideoPlayer.videoGroup) {
-                exclusiveVideoPlayer.videoGroup.visible = false;
-            }
-            if (exclusiveVideoPlayer.particles) {
-                exclusiveVideoPlayer.particles.visible = false;
-            }
-            if (exclusiveVideoPlayer.marker) {
-                exclusiveVideoPlayer.marker.visible = false;
-            }
-            if (exclusiveVideoPlayer.halo) {
-                exclusiveVideoPlayer.halo.visible = false;
-            }
-            if (exclusiveVideoPlayer.plane) {
-                exclusiveVideoPlayer.plane.visible = false;
-            }
-            if (exclusiveVideoPlayer.ambientLight) {
-                exclusiveVideoPlayer.ambientLight.visible = false;
-            }
-        }
-    }
-    
-    // Atualiza a mensagem do portal se estiver visível
-    if (portalMessageElement && portalMessageElement.style.display === 'block') {
-        if (currentLanguage === 'PT') {
-            portalMessageElement.innerHTML = hasAccessBoolean 
-                ? '<h2>Portal Multiverso</h2><p>Você tem acesso ao terreno exclusivo!</p><p>Bem-vindo ao Multiverso!</p>'
-                : '<h2>Portal Multiverso</h2><p>Acesso restrito!</p><p>Você precisa de um Multiverso Pass para acessar esta área.</p>';
         } else {
-            portalMessageElement.innerHTML = hasAccessBoolean 
-                ? '<h2>Multiverso Portal</h2><p>You have access to the exclusive terrain!</p><p>Welcome to the Multiverso!</p>'
-                : '<h2>Multiverso Portal</h2><p>Restricted access!</p><p>You need a Multiverso Pass to access this area.</p>';
+            console.log('🔴 Player de vídeo exclusivo não encontrado! Tentando criar...');
+            // Tentar criar o player se ele não existir
+            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+            
+            // Definir visibilidade após a criação
+            if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+                exclusiveVideoPlayer.videoGroup.visible = hasAccess;
+                console.log('🔵 Player exclusivo criado e definido como:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
+            }
         }
-    }
-    
-    // Força uma renderização para garantir que as mudanças sejam aplicadas imediatamente
-    if (renderer && scene && camera) {
-        renderer.render(scene, camera);
-    }
-    if (cssRenderer && cssScene && camera) {
-        cssRenderer.render(cssScene, camera);
-    }
-    
-    // Força uma atualização da posição da nave para aplicar as novas regras de colisão
-    if (spaceship) {
-        // Verificar se a nave está na área restrita e o acesso foi revogado
-        const terrainLimit = 7000;
         
-        if (!hasAccessBoolean && spaceship.position.z < -terrainLimit) {
-            console.log('Acesso revogado enquanto na área restrita. Teleportando para área segura...');
-            // Teleportar a nave de volta para a área segura, próximo ao portal
-            spaceship.position.set(0, 800, -terrainLimit + 500);
-            
-            // Mostrar mensagem de aviso
-            const statusMsg = document.createElement('div');
-            statusMsg.style.position = 'fixed';
-            statusMsg.style.top = '50%';
-            statusMsg.style.left = '50%';
-            statusMsg.style.transform = 'translate(-50%, -50%)';
-            statusMsg.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-            statusMsg.style.color = '#ff0000';
-            statusMsg.style.padding = '20px';
-            statusMsg.style.borderRadius = '10px';
-            statusMsg.style.fontFamily = 'Arial';
-            statusMsg.style.fontSize = '24px';
-            statusMsg.style.zIndex = '1000';
-            statusMsg.innerHTML = '⚠️ Acesso revogado! Você foi teleportado para a área segura.';
-            document.body.appendChild(statusMsg);
-            
-            // Remove a mensagem após 5 segundos
-            setTimeout(() => {
-                document.body.removeChild(statusMsg);
-            }, 5000);
+        // Atualizar visibilidade do botão de mint
+        if (mintButton) {
+            mintButton.visible = hasAccess;
+            console.log('🔵 Botão de mint:', hasAccess ? 'VISÍVEL' : 'INVISÍVEL');
         }
+        
+        // Atualizar mensagem de acesso exclusivo
+        updateExclusiveAccessMessage(hasAccess);
+        
+        console.log('🔵 Acesso exclusivo atualizado com sucesso');
+    } catch (error) {
+        console.error('🔴 ERRO ao atualizar acesso exclusivo:', error);
     }
 }
 
-// Função para verificar explicitamente o status do Multiverso Pass
-function checkMultiversoPassStatus() {
-    // Verifica se a variável global está definida corretamente
-    // Verifica tanto hasMultiversoPass quanto hasAccess para compatibilidade
-    const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
-    
-    console.log('Verificação explícita do Multiverso Pass:', hasPass);
-    console.log('window.hasMultiversoPass =', window.hasMultiversoPass);
-    console.log('window.hasAccess =', window.hasAccess);
-    
-    // Atualiza o acesso exclusivo com o status atual
-    updateExclusiveAccess(hasPass);
-    
-    return hasPass;
-}
+// ... existing code ...
 
 // Remove qualquer outro event listener que possa estar adicionando botões
 window.removeEventListener('load', window.configurarInteracaoUI);
@@ -2564,307 +2253,414 @@ window.addEventListener('mousemove', checkMintButtonHover);
 function createExclusiveVideoPlayer() {
     console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers');
     
-    // Dimensões do player exclusivo
-    const EXCLUSIVE_VIDEO_WIDTH = 900;
-    const EXCLUSIVE_VIDEO_HEIGHT = 500;
-    
-    // Remover qualquer player existente para evitar duplicatas
-    document.querySelectorAll('.exclusive-video-player').forEach(el => el.remove());
-    document.querySelectorAll('[id^="exclusive-video-"]').forEach(el => el.remove());
-    
-    // Criar elemento DOM para o player exclusivo (frente) - Abordagem simplificada
-    const videoElement = document.createElement('div');
-    videoElement.className = 'exclusive-video-player';
-    videoElement.style.width = EXCLUSIVE_VIDEO_WIDTH + 'px';
-    videoElement.style.height = EXCLUSIVE_VIDEO_HEIGHT + 'px';
-    videoElement.style.backgroundColor = '#000000';
-    videoElement.style.border = '20px solid #9932CC'; // Roxo/violeta para diferenciar do stream normal
-    videoElement.style.borderRadius = '15px';
-    videoElement.style.overflow = 'hidden';
-    videoElement.style.pointerEvents = 'auto';
-    videoElement.style.boxShadow = '0 0 30px #9932CC'; // Adiciona um brilho roxo
-    videoElement.style.zIndex = '999'; // Garante que o elemento esteja em primeiro plano
-    
-    // Título do player exclusivo (frente)
-    const titleElement = document.createElement('div');
-    titleElement.textContent = '✨ CONTEÚDO EXCLUSIVO PARA HODLERS ✨';
-    titleElement.style.backgroundColor = '#9932CC'; // Roxo/violeta
-    titleElement.style.color = 'white';
-    titleElement.style.padding = '15px';
-    titleElement.style.fontSize = '24px';
-    titleElement.style.fontWeight = 'bold';
-    titleElement.style.textAlign = 'center';
-    
-    // Adiciona animação diretamente no elemento para evitar problemas com CSS externo
-    titleElement.style.animation = 'pulse 2s infinite';
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        @keyframes pulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { opacity: 0.8; }
-        }
-    `;
-    document.head.appendChild(styleElement);
-    
-    videoElement.appendChild(titleElement);
-    
-    // Iframe do player exclusivo integrado com o Bunny
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = (EXCLUSIVE_VIDEO_HEIGHT - 54) + 'px';
-    iframe.style.border = 'none';
-    
-    // URL do Bunny com uma biblioteca de vídeos específica - usando URL padrão para garantir compatibilidade
-    iframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c?autoplay=true';
-    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-    iframe.allowFullscreen = true;
-    
-    // Adiciona iframe ao elemento DOM
-    videoElement.appendChild(iframe);
-    
-    // Clone do elemento para o verso (simplificado para garantir funcionamento)
-    const videoElementBack = videoElement.cloneNode(true);
-    
-    // Garantir IDs exclusivos
-    const videoId = 'exclusive-video-' + Date.now();
-    videoElement.id = videoId + '-front';
-    videoElementBack.id = videoId + '-back';
-    
-    // Adiciona elementos ao DOM antes de criar objetos 3D para garantir que estejam no documento
-    document.body.appendChild(videoElement);
-    document.body.appendChild(videoElementBack);
-    
-    // Esconder elementos do DOM visível (serão renderizados pelo CSS3D)
-    videoElement.style.position = 'absolute';
-    videoElement.style.left = '-9999px';
-    videoElementBack.style.position = 'absolute';
-    videoElementBack.style.left = '-9999px';
-    
-    console.log('🔵 Elementos DOM criados com sucesso:', videoElement.id, videoElementBack.id);
-    
-    // POSIÇÃO AJUSTADA: Definir coordenadas exatas baseadas no terreno exclusivo
-    // O terreno exclusivo está posicionado em z = -14500 (aproximadamente)
-    const terrainLimit = 7000;
-    const playerZ = -16000; // Posição Z ajustada para melhor visualização
-    const playerY = 1200;   // Altura ajustada
-    
-    console.log('🔵 Posicionando player em coordenadas: X=0, Y=' + playerY + ', Z=' + playerZ);
-    
-    // Usar CSS3DObject para renderizar o elemento DOM no espaço 3D
-    const videoObject = new CSS3DObject(videoElement);
-    videoObject.position.set(0, playerY, playerZ); // Coordenadas precisas
-    videoObject.scale.set(2, 2, 2); // Escala aumentada para maior visibilidade
-    
-    const videoObjectBack = new CSS3DObject(videoElementBack);
-    videoObjectBack.position.set(0, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
-    videoObjectBack.scale.set(2, 2, 2); // Escala aumentada para maior visibilidade
-    videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
-    
-    // Criar um grupo para manter os dois lados juntos
-    const videoGroup = new THREE.Group();
-    // Adiciona nome exclusivo ao grupo para facilitar depuração
-    videoGroup.name = 'exclusive-video-group-' + Date.now();
-    videoGroup.add(videoObject);
-    videoGroup.add(videoObjectBack);
-    
-    // Adicionar explicitamente à cena CSS3D (crucialmente importante)
-    cssScene.add(videoGroup);
-    
-    console.log('🔵 Player adicionado à cena CSS3D. Group ID:', videoGroup.id, 'Group Name:', videoGroup.name);
-    
-    // Criar um grande marcador visual acima do player
-    // Isso garante que mesmo que o CSS3D não funcione, algo será visível
-    const markerGeometry = new THREE.SphereGeometry(150, 32, 32); // Tamanho aumentado
-    const markerMaterial = new THREE.MeshBasicMaterial({
-        color: 0x9932CC,
-        transparent: true,
-        opacity: 0.8,
-        emissive: 0x9932CC,
-        emissiveIntensity: 1
-    });
-    
-    // Adicionar a esfera marcadora
-    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-    marker.position.set(0, playerY + 300, playerZ); // Posicionado acima do player
-    marker.name = 'exclusive-video-marker';
-    scene.add(marker);
-    
-    // Adicionar também um plano com textura como backup visual
-    const planeGeometry = new THREE.PlaneGeometry(EXCLUSIVE_VIDEO_WIDTH * 1.5, EXCLUSIVE_VIDEO_HEIGHT * 1.5);
-    const planeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x9932CC,
-        transparent: true,
-        opacity: 0.9,
-        side: THREE.DoubleSide
-    });
-    
-    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.position.set(0, playerY, playerZ + 10); // Ligeiramente à frente do player
-    plane.name = 'exclusive-video-backup-plane';
-    scene.add(plane);
-    
-    // Criar luzes para iluminar o player - ILUMINAÇÃO INTENSIFICADA
-    const spotLight1 = new THREE.SpotLight(0x9932CC, 10); // Intensidade aumentada
-    spotLight1.position.set(-200, playerY + 500, playerZ - 200);
-    spotLight1.target.position.set(0, playerY, playerZ);
-    spotLight1.angle = Math.PI / 4; // Ângulo mais amplo
-    spotLight1.penumbra = 0.2;
-    spotLight1.distance = 3000; // Alcance aumentado
-    scene.add(spotLight1);
-    scene.add(spotLight1.target);
-    
-    const spotLight2 = new THREE.SpotLight(0x9932CC, 10);
-    spotLight2.position.set(200, playerY + 500, playerZ - 200);
-    spotLight2.target.position.set(0, playerY, playerZ);
-    spotLight2.angle = Math.PI / 4;
-    spotLight2.penumbra = 0.2;
-    spotLight2.distance = 3000;
-    scene.add(spotLight2);
-    scene.add(spotLight2.target);
-    
-    // Adicionar partículas brilhantes ao redor do player
-    const particleCount = 500; // Mais partículas
-    const particleGeometry = new THREE.BufferGeometry();
-    const particlePositions = new Float32Array(particleCount * 3);
-    
-    // Distribuir partículas em uma esfera ao redor do player
-    for (let i = 0; i < particleCount; i++) {
-        const radius = 400;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.random() * Math.PI;
+    try {
+        // Dimensões do player exclusivo
+        const EXCLUSIVE_VIDEO_WIDTH = 900;
+        const EXCLUSIVE_VIDEO_HEIGHT = 500;
         
-        particlePositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-        particlePositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
-        particlePositions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
-    }
-    
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    
-    const particleMaterial = new THREE.PointsMaterial({
-        color: 0xAA66FF,
-        size: 15,
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending
-    });
-    
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
-    particles.name = 'exclusive-video-particles';
-    scene.add(particles);
-    
-    // Adicionar um grande halo ao redor do player
-    const haloGeometry = new THREE.RingGeometry(300, 600, 32);
-    const haloMaterial = new THREE.MeshBasicMaterial({
-        color: 0x9932CC,
-        transparent: true,
-        opacity: 0.3,
-        side: THREE.DoubleSide
-    });
-    
-    const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-    halo.position.set(0, playerY, playerZ - 50);
-    halo.rotation.x = Math.PI / 2;
-    halo.name = 'exclusive-video-halo';
-    scene.add(halo);
-    
-    // Animar o marcador para torná-lo mais visível
-    function animateElements() {
-        requestAnimationFrame(animateElements);
-        const time = Date.now() * 0.001;
+        // Remover qualquer player existente para evitar duplicatas
+        document.querySelectorAll('.exclusive-video-player').forEach(el => el.remove());
+        document.querySelectorAll('[id^="exclusive-video-"]').forEach(el => el.remove());
         
-        // Animar o marcador
-        marker.position.y = playerY + 300 + Math.sin(time) * 100;
-        marker.scale.setScalar(1 + Math.sin(time * 0.5) * 0.3);
+        // Criar elemento DOM para o player exclusivo (frente) - Abordagem simplificada
+        const videoElement = document.createElement('div');
+        videoElement.className = 'exclusive-video-player';
+        videoElement.style.width = EXCLUSIVE_VIDEO_WIDTH + 'px';
+        videoElement.style.height = EXCLUSIVE_VIDEO_HEIGHT + 'px';
+        videoElement.style.backgroundColor = '#000000';
+        videoElement.style.border = '20px solid #FF00FF'; // Magenta puro para máxima visibilidade
+        videoElement.style.borderRadius = '15px';
+        videoElement.style.overflow = 'hidden';
+        videoElement.style.pointerEvents = 'auto';
+        videoElement.style.boxShadow = '0 0 50px #FF00FF'; // Brilho mais intenso
+        videoElement.style.zIndex = '999'; // Garante que o elemento esteja em primeiro plano
         
-        // Animar o halo
-        halo.scale.set(
-            1 + Math.sin(time * 0.7) * 0.2,
-            1 + Math.sin(time * 0.7) * 0.2,
-            1
-        );
-        halo.rotation.z = time * 0.2;
-        haloMaterial.opacity = 0.3 + Math.sin(time) * 0.2;
+        // Título do player exclusivo (frente)
+        const titleElement = document.createElement('div');
+        titleElement.textContent = '✨ CONTEÚDO EXCLUSIVO PARA HODLERS ✨';
+        titleElement.style.backgroundColor = '#FF00FF'; // Magenta puro
+        titleElement.style.color = 'white';
+        titleElement.style.padding = '15px';
+        titleElement.style.fontSize = '24px';
+        titleElement.style.fontWeight = 'bold';
+        titleElement.style.textAlign = 'center';
         
-        // Animar as partículas
-        const positions = particles.geometry.attributes.position.array;
+        // Adiciona animação diretamente no elemento para evitar problemas com CSS externo
+        titleElement.style.animation = 'pulse 1s infinite'; // Animação mais rápida
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            @keyframes pulse {
+                0% { opacity: 0.7; }
+                50% { opacity: 1; }
+                100% { opacity: 0.7; }
+            }
+        `;
+        document.head.appendChild(styleElement);
+        
+        videoElement.appendChild(titleElement);
+        
+        // Iframe do player exclusivo integrado com o Bunny
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = (EXCLUSIVE_VIDEO_HEIGHT - 54) + 'px';
+        iframe.style.border = 'none';
+        
+        // URL do Bunny com uma biblioteca de vídeos específica
+        iframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c?autoplay=true&loop=true&muted=false';
+        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        iframe.allowFullscreen = true;
+        
+        // Adiciona iframe ao elemento DOM
+        videoElement.appendChild(iframe);
+        
+        // Clone do elemento para o verso (simplificado para garantir funcionamento)
+        const videoElementBack = videoElement.cloneNode(true);
+        
+        // Garantir IDs exclusivos
+        const videoId = 'exclusive-video-' + Date.now();
+        videoElement.id = videoId + '-front';
+        videoElementBack.id = videoId + '-back';
+        
+        // Adiciona elementos ao DOM antes de criar objetos 3D para garantir que estejam no documento
+        document.body.appendChild(videoElement);
+        document.body.appendChild(videoElementBack);
+        
+        // Esconder elementos do DOM visível (serão renderizados pelo CSS3D)
+        videoElement.style.position = 'absolute';
+        videoElement.style.left = '-9999px';
+        videoElementBack.style.position = 'absolute';
+        videoElementBack.style.left = '-9999px';
+        
+        console.log('🔵 Elementos DOM criados com sucesso:', videoElement.id, videoElementBack.id);
+        
+        // POSIÇÃO AJUSTADA: Definir coordenadas exatas baseadas no terreno exclusivo
+        // O terreno exclusivo está posicionado em z = -14500 (aproximadamente)
+        const terrainLimit = 7000;
+        // Posicionar o player no centro do terreno exclusivo
+        const playerZ = -terrainLimit - 3000; // Posição Z ajustada para ficar mais próximo do portal
+        const playerY = 1500;   // Altura ajustada para maior visibilidade
+        
+        console.log('🔵 Posicionando player em coordenadas: X=0, Y=' + playerY + ', Z=' + playerZ);
+        
+        // Usar CSS3DObject para renderizar o elemento DOM no espaço 3D
+        const videoObject = new CSS3DObject(videoElement);
+        videoObject.position.set(0, playerY, playerZ); // Coordenadas precisas
+        videoObject.scale.set(3, 3, 3); // Escala muito aumentada para maior visibilidade
+        
+        const videoObjectBack = new CSS3DObject(videoElementBack);
+        videoObjectBack.position.set(0, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
+        videoObjectBack.scale.set(3, 3, 3); // Escala muito aumentada para maior visibilidade
+        videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
+        
+        // Criar um grupo para manter os dois lados juntos
+        const videoGroup = new THREE.Group();
+        // Adiciona nome exclusivo ao grupo para facilitar depuração
+        videoGroup.name = 'exclusive-video-group-' + Date.now();
+        videoGroup.add(videoObject);
+        videoGroup.add(videoObjectBack);
+        
+        // Adicionar explicitamente à cena CSS3D (crucialmente importante)
+        cssScene.add(videoGroup);
+        
+        console.log('🔵 Player adicionado à cena CSS3D. Group ID:', videoGroup.id, 'Group Name:', videoGroup.name);
+        
+        // Criar um grande marcador visual acima do player
+        // Isso garante que mesmo que o CSS3D não funcione, algo será visível
+        const markerGeometry = new THREE.SphereGeometry(300, 32, 32); // Tamanho muito aumentado
+        const markerMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF00FF, // Magenta puro
+            transparent: true,
+            opacity: 0.9, // Mais opaco
+            emissive: 0xFF00FF,
+            emissiveIntensity: 2 // Intensidade aumentada
+        });
+        
+        // Adicionar a esfera marcadora
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        marker.position.set(0, playerY + 500, playerZ); // Posicionado bem acima do player
+        marker.name = 'exclusive-video-marker';
+        scene.add(marker);
+        
+        // Adicionar também um plano com textura como backup visual
+        const planeGeometry = new THREE.PlaneGeometry(EXCLUSIVE_VIDEO_WIDTH * 2, EXCLUSIVE_VIDEO_HEIGHT * 2);
+        const planeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF00FF, // Magenta puro
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+        
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.position.set(0, playerY, playerZ + 10); // Ligeiramente à frente do player
+        plane.name = 'exclusive-video-backup-plane';
+        scene.add(plane);
+        
+        // Criar luzes para iluminar o player - ILUMINAÇÃO EXTREMAMENTE INTENSIFICADA
+        const spotLight1 = new THREE.SpotLight(0xFF00FF, 30); // Intensidade extremamente aumentada
+        spotLight1.position.set(-200, playerY + 500, playerZ - 200);
+        spotLight1.target.position.set(0, playerY, playerZ);
+        spotLight1.angle = Math.PI / 2; // Ângulo muito mais amplo
+        spotLight1.penumbra = 0.2;
+        spotLight1.distance = 10000; // Alcance muito aumentado
+        scene.add(spotLight1);
+        scene.add(spotLight1.target);
+        
+        const spotLight2 = new THREE.SpotLight(0xFF00FF, 30);
+        spotLight2.position.set(200, playerY + 500, playerZ - 200);
+        spotLight2.target.position.set(0, playerY, playerZ);
+        spotLight2.angle = Math.PI / 2;
+        spotLight2.penumbra = 0.2;
+        spotLight2.distance = 10000;
+        scene.add(spotLight2);
+        scene.add(spotLight2.target);
+        
+        // Adicionar uma luz ambiente para garantir visibilidade
+        const ambientLight = new THREE.AmbientLight(0xFF00FF, 2); // Intensidade dobrada
+        ambientLight.position.set(0, playerY, playerZ);
+        ambientLight.name = 'exclusive-video-ambient';
+        scene.add(ambientLight);
+        
+        // Adicionar partículas brilhantes ao redor do player
+        const particleCount = 2000; // Muito mais partículas
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        
+        // Distribuir partículas em uma esfera ao redor do player
         for (let i = 0; i < particleCount; i++) {
-            positions[i * 3] += Math.sin(time + i * 0.01) * 1;
-            positions[i * 3 + 1] += Math.cos(time + i * 0.01) * 1;
-            positions[i * 3 + 2] += Math.sin(time * 0.5 + i * 0.01) * 1;
+            const radius = 800; // Raio muito maior
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
             
-            // Reposicionar partículas que saem muito do limite
-            const distance = Math.sqrt(
-                Math.pow(positions[i * 3], 2) +
-                Math.pow(positions[i * 3 + 1] - playerY, 2) +
-                Math.pow(positions[i * 3 + 2] - playerZ, 2)
+            particlePositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            particlePositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
+            particlePositions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
+        }
+        
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xFF00FF, // Magenta puro
+            size: 30, // Tamanho muito aumentado
+            transparent: true,
+            opacity: 0.9, // Mais opaco
+            blending: THREE.AdditiveBlending
+        });
+        
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        particles.name = 'exclusive-video-particles';
+        scene.add(particles);
+        
+        // Adicionar um grande halo ao redor do player
+        const haloGeometry = new THREE.RingGeometry(500, 1000, 32); // Tamanho muito aumentado
+        const haloMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF00FF, // Magenta puro
+            transparent: true,
+            opacity: 0.7, // Mais opaco
+            side: THREE.DoubleSide
+        });
+        
+        const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+        halo.position.set(0, playerY, playerZ - 50);
+        halo.rotation.x = Math.PI / 2;
+        halo.name = 'exclusive-video-halo';
+        scene.add(halo);
+        
+        // Animar o marcador para torná-lo mais visível
+        function animateElements() {
+            requestAnimationFrame(animateElements);
+            const time = Date.now() * 0.001;
+            
+            // Animar o marcador
+            marker.position.y = playerY + 500 + Math.sin(time) * 200; // Movimento muito mais amplo
+            marker.scale.setScalar(1 + Math.sin(time * 0.5) * 0.7); // Pulsação muito mais intensa
+            
+            // Animar o halo
+            halo.scale.set(
+                1 + Math.sin(time * 0.7) * 0.5, // Pulsação muito mais intensa
+                1 + Math.sin(time * 0.7) * 0.5,
+                1
             );
+            halo.rotation.z = time * 0.5; // Rotação muito mais rápida
+            haloMaterial.opacity = 0.5 + Math.sin(time) * 0.5; // Variação de opacidade muito mais intensa
             
-            if (distance > 600) {
-                const radius = 400;
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI;
+            // Animar as partículas
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] += Math.sin(time + i * 0.01) * 2; // Movimento muito mais intenso
+                positions[i * 3 + 1] += Math.cos(time + i * 0.01) * 2;
+                positions[i * 3 + 2] += Math.sin(time * 0.5 + i * 0.01) * 2;
                 
-                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
-                positions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
+                // Reposicionar partículas que saem muito do limite
+                const distance = Math.sqrt(
+                    Math.pow(positions[i * 3], 2) +
+                    Math.pow(positions[i * 3 + 1] - playerY, 2) +
+                    Math.pow(positions[i * 3 + 2] - playerZ, 2)
+                );
+                
+                if (distance > 1000) { // Limite muito maior
+                    const radius = 800;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    
+                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
+                    positions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+        }
+        
+        // Iniciar animações
+        animateElements();
+        
+        // Adicionar função de monitoramento para verificação de visibilidade e depuração
+        const debugInterval = setInterval(() => {
+            // Verificar se o grupo ainda faz parte da cena
+            const isInScene = cssScene.children.includes(videoGroup);
+            if (!isInScene) {
+                console.log('🔴 ALERTA: Player exclusivo foi removido da cena CSS3D!');
+                cssScene.add(videoGroup); // Tentar readicionar à cena
+                console.log('🔵 Tentativa de readicionar player à cena CSS3D');
+            }
+            
+            // Verificar visibilidade
+            const visibilityStatus = videoGroup.visible ? 'visível' : 'invisível';
+            console.log(`🔵 Status do player exclusivo: ${visibilityStatus}, Posição:`, 
+                        videoObject.position.x, videoObject.position.y, videoObject.position.z);
+            
+            // Verificar se os elementos DOM ainda estão intactos
+            const domElementFront = document.getElementById(videoId + '-front');
+            const domElementBack = document.getElementById(videoId + '-back');
+            if (!domElementFront || !domElementBack) {
+                console.log('🔴 ALERTA: Elementos DOM do player foram removidos!');
+                
+                // Tentar recriar os elementos removidos
+                document.body.appendChild(videoElement);
+                document.body.appendChild(videoElementBack);
+                console.log('🔵 Elementos DOM recriados');
+            }
+            
+            // Força uma atualização do renderer CSS3D
+            if (cssRenderer) {
+                cssRenderer.render(cssScene, camera);
+                console.log('🔵 Forçando re-renderização CSS3D');
+            }
+        }, 2000); // Verificação muito mais frequente: a cada 2 segundos
+        
+        console.log('🔵 Player exclusivo criado com sucesso. Iniciando animações e monitoramento.');
+        
+        // Retornar as referências para controle
+        return {
+            videoGroup,
+            videoObject,
+            videoObjectBack,
+            marker,
+            particles,
+            halo,
+            plane,
+            ambientLight,
+            debugInterval,
+            position: { x: 0, y: playerY, z: playerZ },
+            domElements: { front: videoElement, back: videoElementBack }
+        };
+    } catch (error) {
+        console.error('🔴 ERRO ao criar player exclusivo:', error);
+        
+        // Criar um marcador de emergência para indicar onde o player deveria estar
+        const emergencyMarker = new THREE.Mesh(
+            new THREE.SphereGeometry(500, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.8 })
+        );
+        emergencyMarker.position.set(0, 1500, -10000);
+        emergencyMarker.name = 'emergency-marker';
+        scene.add(emergencyMarker);
+        
+        return {
+            videoGroup: null,
+            marker: emergencyMarker,
+            position: { x: 0, y: 1500, z: -10000 }
+        };
+    }
+}
+
+// ... existing code ...
+
+// Função para atualizar a mensagem de acesso exclusivo
+function updateExclusiveAccessMessage(hasAccess) {
+    console.log('🔵 Atualizando mensagem de acesso exclusivo:', hasAccess ? 'COM ACESSO' : 'SEM ACESSO');
+    
+    try {
+        // Atualiza a mensagem do portal se estiver visível
+        if (portalMessageElement && portalMessageElement.style.display === 'block') {
+            if (currentLanguage === 'PT') {
+                portalMessageElement.innerHTML = hasAccess 
+                    ? '<h2>Portal Multiverso</h2><p>Você tem acesso ao terreno exclusivo!</p><p>Bem-vindo ao Multiverso!</p>'
+                    : '<h2>Portal Multiverso</h2><p>Acesso restrito!</p><p>Você precisa de um Multiverso Pass para acessar esta área.</p>';
+            } else {
+                portalMessageElement.innerHTML = hasAccess 
+                    ? '<h2>Multiverso Portal</h2><p>You have access to the exclusive terrain!</p><p>Welcome to the Multiverso!</p>'
+                    : '<h2>Multiverso Portal</h2><p>Restricted access!</p><p>You need a Multiverso Pass to access this area.</p>';
+            }
+            console.log('🔵 Mensagem do portal atualizada');
+        }
+        
+        // Força uma renderização para garantir que as mudanças sejam aplicadas imediatamente
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+        
+        // Verifica se a nave está na área restrita e o acesso foi revogado
+        if (!hasAccess && spaceship) {
+            const terrainLimit = 7000;
+            
+            if (spaceship.position.z < -terrainLimit) {
+                console.log('🔴 Acesso revogado enquanto na área restrita. Teleportando para área segura...');
+                // Teleportar a nave de volta para a área segura, próximo ao portal
+                spaceship.position.set(0, 800, -terrainLimit + 500);
+                
+                // Mostrar mensagem de aviso
+                const statusMsg = document.createElement('div');
+                statusMsg.style.position = 'fixed';
+                statusMsg.style.top = '50%';
+                statusMsg.style.left = '50%';
+                statusMsg.style.transform = 'translate(-50%, -50%)';
+                statusMsg.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                statusMsg.style.color = '#ff0000';
+                statusMsg.style.padding = '20px';
+                statusMsg.style.borderRadius = '10px';
+                statusMsg.style.fontFamily = 'Arial';
+                statusMsg.style.fontSize = '24px';
+                statusMsg.style.zIndex = '1000';
+                statusMsg.innerHTML = currentLanguage === 'PT' 
+                    ? '⚠️ Acesso revogado! Você foi teleportado para a área segura.'
+                    : '⚠️ Access revoked! You have been teleported to the safe area.';
+                document.body.appendChild(statusMsg);
+                
+                // Remove a mensagem após 5 segundos
+                setTimeout(() => {
+                    document.body.removeChild(statusMsg);
+                }, 5000);
             }
         }
-        particles.geometry.attributes.position.needsUpdate = true;
+    } catch (error) {
+        console.error('🔴 ERRO ao atualizar mensagem de acesso exclusivo:', error);
     }
+}
+
+// Função para verificar explicitamente o status do Multiverso Pass
+function checkMultiversoPassStatus() {
+    // Verifica se a variável global está definida corretamente
+    // Verifica tanto hasMultiversoPass quanto hasAccess para compatibilidade
+    const hasPass = window.hasMultiversoPass === true || window.hasAccess === true;
     
-    // Iniciar animações
-    animateElements();
+    console.log('🔵 Verificação explícita do Multiverso Pass:', hasPass);
+    console.log('window.hasMultiversoPass =', window.hasMultiversoPass);
+    console.log('window.hasAccess =', window.hasAccess);
     
-    // Adicionar função de monitoramento para verificação de visibilidade e depuração
-    const debugInterval = setInterval(() => {
-        // Verificar se o grupo ainda faz parte da cena
-        const isInScene = cssScene.children.includes(videoGroup);
-        if (!isInScene) {
-            console.log('🔴 ALERTA: Player exclusivo foi removido da cena CSS3D!');
-            cssScene.add(videoGroup); // Tentar readicionar à cena
-            console.log('🔵 Tentativa de readicionar player à cena CSS3D');
-        }
-        
-        // Verificar visibilidade
-        const visibilityStatus = videoGroup.visible ? 'visível' : 'invisível';
-        console.log(`🔵 Status do player exclusivo: ${visibilityStatus}, Posição:`, 
-                    videoObject.position.x, videoObject.position.y, videoObject.position.z);
-        
-        // Verificar se os elementos DOM ainda estão intactos
-        const domElementFront = document.getElementById(videoId + '-front');
-        const domElementBack = document.getElementById(videoId + '-back');
-        if (!domElementFront || !domElementBack) {
-            console.log('🔴 ALERTA: Elementos DOM do player foram removidos!');
-            
-            // Tentar recriar os elementos removidos
-            document.body.appendChild(videoElement);
-            document.body.appendChild(videoElementBack);
-            console.log('🔵 Elementos DOM recriados');
-        }
-        
-        // Força uma atualização do renderer CSS3D
-        if (cssRenderer) {
-            cssRenderer.render(cssScene, camera);
-            console.log('🔵 Forçando re-renderização CSS3D');
-        }
-    }, 5000); // Verificação mais frequente: a cada 5 segundos
+    // Atualiza o acesso exclusivo com o status atual
+    updateExclusiveAccess(hasPass);
     
-    console.log('🔵 Player exclusivo criado com sucesso. Iniciando animações e monitoramento.');
-    
-    // Retornar as referências para controle
-    return {
-        videoGroup,
-        videoObject,
-        videoObjectBack,
-        marker,
-        particles,
-        halo,
-        plane,
-        debugInterval,
-        position: { x: 0, y: playerY, z: playerZ },
-        domElements: { front: videoElement, back: videoElementBack }
-    };
+    return hasPass;
 }
 
 // ... existing code ...
