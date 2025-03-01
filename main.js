@@ -773,6 +773,7 @@ let lunarTerrain;
 let exclusiveLunarTerrain; // Nova referência para o terreno exclusivo
 let mysticalPortal;
 let portalMessageElement;
+let exclusiveVideoPlayer; // Nova referência para o player de vídeo exclusivo para hodlers
 
 // Adicionar variável global para o botão
 let mintButton;
@@ -817,6 +818,14 @@ function init() {
         mysticalPortal = createMysticalPortal();
         createPortalMessage();
         mintButton = createMintButton(); // Armazenar o botão em uma variável global
+        
+        // Cria o player de vídeo exclusivo apenas se o usuário tiver o Multiverso Pass
+        if (hasPass) {
+            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+            console.log('Player de vídeo exclusivo criado para hodler');
+        } else {
+            console.log('Usuário sem Multiverso Pass, player exclusivo não criado');
+        }
         
         // Posiciona a nave acima do terreno lunar
         spaceship.position.set(0, 800, 0);
@@ -1695,7 +1704,15 @@ function animate() {
             const streamBox = new THREE.Box3().setFromObject(streamScreen);
             const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
             
-            if (!streamBox.intersectsBox(spaceshipBox)) {
+            // Verifica colisão com o player de vídeo exclusivo (apenas se estiver visível)
+            let exclusiveVideoCollision = false;
+            if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup && exclusiveVideoPlayer.videoGroup.visible) {
+                const exclusiveVideoBox = new THREE.Box3().setFromObject(exclusiveVideoPlayer.videoGroup);
+                exclusiveVideoCollision = exclusiveVideoBox.intersectsBox(spaceshipBox);
+            }
+            
+            // Atualiza a posição apenas se não houver colisão com nenhum dos players
+            if (!streamBox.intersectsBox(spaceshipBox) && !exclusiveVideoCollision) {
                 spaceship.position.copy(collisionResult.position);
             }
             
@@ -1839,6 +1856,16 @@ function animate() {
                     // Se o usuário não tem o Multiverso Pass, o terreno exclusivo não deveria estar visível
                     // Mas por segurança, vamos garantir que ele não seja usado
                     exclusiveLunarTerrain.visible = false;
+                    
+                    // Esconde também o player de vídeo exclusivo
+                    if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+                        exclusiveVideoPlayer.videoGroup.visible = false;
+                        if (exclusiveVideoPlayer.particles) {
+                            exclusiveVideoPlayer.particles.visible = false;
+                        }
+                        console.log('Player de vídeo exclusivo escondido: usuário sem Multiverso Pass');
+                    }
+                    
                     console.log('Terreno exclusivo ocultado: usuário sem Multiverso Pass');
                 }
             }
@@ -2036,6 +2063,31 @@ function updateExclusiveAccess(hasAccess) {
         // Atualiza a visibilidade do terreno exclusivo
         exclusiveLunarTerrain.visible = hasAccessBoolean;
         console.log('Terreno exclusivo visível:', exclusiveLunarTerrain.visible);
+    }
+    
+    // Gerencia o player de vídeo exclusivo
+    if (hasAccessBoolean) {
+        // Se o usuário tem acesso e o player ainda não existe, cria-o
+        if (!exclusiveVideoPlayer) {
+            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+            console.log('Player de vídeo exclusivo criado para hodler');
+        } else if (exclusiveVideoPlayer.videoGroup) {
+            // Se já existe, apenas garante que esteja visível
+            exclusiveVideoPlayer.videoGroup.visible = true;
+            if (exclusiveVideoPlayer.particles) {
+                exclusiveVideoPlayer.particles.visible = true;
+            }
+            console.log('Player de vídeo exclusivo agora visível');
+        }
+    } else {
+        // Se o usuário não tem acesso e o player existe, esconde-o
+        if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+            exclusiveVideoPlayer.videoGroup.visible = false;
+            if (exclusiveVideoPlayer.particles) {
+                exclusiveVideoPlayer.particles.visible = false;
+            }
+            console.log('Player de vídeo exclusivo escondido');
+        }
     }
     
     // Atualiza a mensagem do portal se estiver visível
@@ -2370,4 +2422,205 @@ function checkMintButtonHover(event) {
 
 // Adicionar evento de movimento do mouse para verificar hover no botão
 window.addEventListener('mousemove', checkMintButtonHover);
+
+// ... existing code ...
+
+// Função para criar o player de vídeo exclusivo para hodlers
+function createExclusiveVideoPlayer() {
+    // Dimensões do player exclusivo (um pouco maior que o player normal)
+    const EXCLUSIVE_VIDEO_WIDTH = 900;
+    const EXCLUSIVE_VIDEO_HEIGHT = 500;
+    
+    // Criar elemento DOM para o player exclusivo (frente)
+    const videoElement = document.createElement('div');
+    videoElement.style.width = EXCLUSIVE_VIDEO_WIDTH + 'px';
+    videoElement.style.height = EXCLUSIVE_VIDEO_HEIGHT + 'px';
+    videoElement.style.backgroundColor = '#000000';
+    videoElement.style.border = '20px solid #9932CC'; // Roxo/violeta para diferenciar do stream normal
+    videoElement.style.borderRadius = '15px';
+    videoElement.style.overflow = 'hidden';
+    videoElement.style.pointerEvents = 'auto';
+    videoElement.style.boxShadow = '0 0 30px #9932CC'; // Adiciona um brilho roxo
+    
+    // Criar elemento DOM para o player exclusivo (verso - clone do primeiro)
+    const videoElementBack = videoElement.cloneNode(true);
+    
+    // Título do player exclusivo (frente)
+    const titleElement = document.createElement('div');
+    titleElement.textContent = '✨ CONTEÚDO EXCLUSIVO PARA HODLERS ✨';
+    titleElement.style.backgroundColor = '#9932CC'; // Roxo/violeta
+    titleElement.style.color = 'white';
+    titleElement.style.padding = '15px';
+    titleElement.style.fontSize = '24px';
+    titleElement.style.fontWeight = 'bold';
+    titleElement.style.textAlign = 'center';
+    titleElement.style.animation = 'pulse 2s infinite'; // Animação diferente
+    
+    // Adiciona a animação de pulse ao CSS
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+    `;
+    document.head.appendChild(styleElement);
+    
+    videoElement.appendChild(titleElement);
+    
+    // Título do player exclusivo (verso)
+    const titleElementBack = titleElement.cloneNode(true);
+    videoElementBack.appendChild(titleElementBack);
+    
+    // Iframe do player exclusivo (frente)
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = (EXCLUSIVE_VIDEO_HEIGHT - 54) + 'px';
+    iframe.style.border = 'none';
+    iframe.src = 'https://iframe.mediadelivery.net/embed/203779/video'; // URL do Bunny para vídeos exclusivos
+    iframe.allowFullscreen = true;
+    videoElement.appendChild(iframe);
+    
+    // Iframe do player exclusivo (verso)
+    const iframeBack = iframe.cloneNode(true);
+    videoElementBack.appendChild(iframeBack);
+    
+    // Criar grupo para conter os dois lados do player exclusivo
+    const videoGroup = new THREE.Group();
+    
+    // Criar objeto CSS3D para frente
+    const videoObject = new CSS3DObject(videoElement);
+    // Posiciona o player exclusivo acima do terreno lunar exclusivo
+    // O terreno exclusivo está em z = -14500 (aproximadamente), então posicionamos o player mais adiante
+    videoObject.position.set(0, 2000, -18000); // Centralizado no eixo X, alto no Y, profundo no Z
+    videoObject.scale.set(3, 3, 3);
+    
+    // Criar objeto CSS3D para verso (igual à frente)
+    const videoObjectBack = new CSS3DObject(videoElementBack);
+    videoObjectBack.position.set(0, 2000, -18001); // Posição ligeiramente atrás
+    videoObjectBack.scale.set(3, 3, 3);
+    videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
+    
+    // Adiciona os dois lados ao grupo
+    videoGroup.add(videoObject);
+    videoGroup.add(videoObjectBack);
+    
+    cssScene.add(videoGroup);
+    
+    // Ajusta as luzes para o player exclusivo
+    const spotLight1 = new THREE.SpotLight(0x9932CC, 3); // Luz mais intensa
+    spotLight1.position.set(-500, 2100, -17900);
+    spotLight1.target.position.copy(videoObject.position);
+    scene.add(spotLight1);
+    scene.add(spotLight1.target);
+    
+    const spotLight2 = new THREE.SpotLight(0x9932CC, 3);
+    spotLight2.position.set(500, 2100, -17900);
+    spotLight2.target.position.copy(videoObject.position);
+    scene.add(spotLight2);
+    scene.add(spotLight2.target);
+    
+    // Ajusta o halo para o player exclusivo
+    const haloGeometry = new THREE.PlaneGeometry(EXCLUSIVE_VIDEO_WIDTH * 3.5, EXCLUSIVE_VIDEO_HEIGHT * 3.5);
+    const haloMaterial = new THREE.MeshBasicMaterial({
+        color: 0x9932CC,
+        transparent: true,
+        opacity: 0.4,
+        side: THREE.DoubleSide
+    });
+    
+    // Cria halos para ambos os lados
+    const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+    const haloBack = new THREE.Mesh(haloGeometry, haloMaterial.clone());
+    
+    halo.position.copy(videoObject.position);
+    halo.position.z += 1;
+    haloBack.position.copy(videoObjectBack.position);
+    haloBack.position.z -= 1;
+    haloBack.rotation.y = Math.PI;
+    haloBack.scale.x = -1; // Espelha o halo traseiro também
+    
+    scene.add(halo);
+    scene.add(haloBack);
+    
+    // Adiciona colisão para o player exclusivo
+    const videoCollider = new THREE.Box3().setFromObject(videoGroup);
+    
+    // Animar os halos com efeito diferente do player normal
+    function animateExclusiveHalo() {
+        requestAnimationFrame(animateExclusiveHalo);
+        const time = Date.now() * 0.002;
+        // Efeito de pulsação mais complexo
+        const opacity = 0.4 + Math.sin(time) * 0.2;
+        // Efeito de mudança de cor sutil
+        const hue = (Math.sin(time * 0.5) * 0.1) + 0.75; // Varia entre 0.65 e 0.85 (tons de roxo/rosa)
+        const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+        
+        halo.material.opacity = opacity;
+        haloBack.material.opacity = opacity;
+        halo.material.color = color;
+        haloBack.material.color = color;
+    }
+    animateExclusiveHalo();
+    
+    // Adiciona partículas especiais ao redor do player exclusivo
+    const particleCount = 200;
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount; i++) {
+        // Distribui partículas em um retângulo ao redor do player
+        const x = (Math.random() - 0.5) * EXCLUSIVE_VIDEO_WIDTH * 4;
+        const y = (Math.random() - 0.5) * EXCLUSIVE_VIDEO_HEIGHT * 4;
+        const z = (Math.random() - 0.5) * 200;
+        
+        particlePositions[i * 3] = x;
+        particlePositions[i * 3 + 1] = y;
+        particlePositions[i * 3 + 2] = z;
+    }
+    
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    
+    const particleMaterial = new THREE.PointsMaterial({
+        color: 0xAA66FF,
+        size: 15,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending
+    });
+    
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    particles.position.copy(videoObject.position);
+    scene.add(particles);
+    
+    // Animar as partículas
+    function animateParticles() {
+        requestAnimationFrame(animateParticles);
+        const time = Date.now() * 0.001;
+        
+        const positions = particles.geometry.attributes.position.array;
+        
+        for (let i = 0; i < particleCount; i++) {
+            // Movimento suave das partículas
+            positions[i * 3 + 1] += Math.sin(time + i * 0.1) * 0.5;
+            positions[i * 3] += Math.cos(time + i * 0.1) * 0.5;
+            
+            // Reposiciona partículas que saem muito do limite
+            if (Math.abs(positions[i * 3]) > EXCLUSIVE_VIDEO_WIDTH * 2) {
+                positions[i * 3] = (Math.random() - 0.5) * EXCLUSIVE_VIDEO_WIDTH * 4;
+            }
+            if (Math.abs(positions[i * 3 + 1]) > EXCLUSIVE_VIDEO_HEIGHT * 2) {
+                positions[i * 3 + 1] = (Math.random() - 0.5) * EXCLUSIVE_VIDEO_HEIGHT * 4;
+            }
+        }
+        
+        particles.geometry.attributes.position.needsUpdate = true;
+    }
+    animateParticles();
+    
+    return { videoGroup, videoCollider, particles };
+}
+
+// ... existing code ...
 
