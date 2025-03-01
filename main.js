@@ -2226,10 +2226,63 @@ function updateExclusiveAccess(hasAccess) {
 
 // Adiciona um evento para forçar a atualização do player após o carregamento completo
 window.addEventListener('load', function() {
-    console.log('Página totalmente carregada, verificando player de vídeo');
+    console.log('[DEBUG] Página totalmente carregada, verificando player de vídeo');
     // Aguarda um momento para garantir que tudo esteja inicializado
     setTimeout(function() {
         forceUpdateHodlerVideoPlayer();
+        
+        // Adiciona função de diagnóstico que pode ser chamada do console
+        window.debugHodlerPlayer = function() {
+            console.log('=== DIAGNÓSTICO DO PLAYER DE VÍDEO ===');
+            console.log('hasMultiversoPass:', window.hasMultiversoPass);
+            console.log('hasAccess:', window.hasAccess);
+            console.log('hodlerVideoPlayer existe:', !!hodlerVideoPlayer);
+            
+            if (hodlerVideoPlayer) {
+                console.log('hodlerVideoPlayer visível:', hodlerVideoPlayer.visible);
+                console.log('hodlerVideoPlayer posição:', 
+                    hodlerVideoPlayer.children[0] ? 
+                    JSON.stringify(hodlerVideoPlayer.children[0].position) : 'sem filhos');
+                console.log('Número de filhos:', hodlerVideoPlayer.children.length);
+                console.log('cssScene contém player:', cssScene.children.includes(hodlerVideoPlayer));
+            }
+            
+            console.log('cssScene número de objetos:', cssScene.children.length);
+            console.log('Objetos na cssScene:', cssScene.children.map(c => c.name || 'objeto sem nome').join(', '));
+            console.log('CSS Renderer ativo:', !!cssRenderer);
+            
+            console.log('=== FORÇANDO ATUALIZAÇÃO DO PLAYER ===');
+            // Remove player existente
+            if (hodlerVideoPlayer) {
+                cssScene.remove(hodlerVideoPlayer);
+                hodlerVideoPlayer = null;
+            }
+            
+            // Cria novo player com posição fixa e cores intensas
+            const fixedPosition = { x: 0, y: 4000, z: -12000 };
+            console.log('Criando player na posição:', JSON.stringify(fixedPosition));
+            
+            createHodlerVideoPlayer();
+            
+            // Força visibilidade
+            if (hodlerVideoPlayer) {
+                hodlerVideoPlayer.visible = true;
+                console.log('Player recriado e forçado visível');
+                
+                // Renderiza a cena
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                    console.log('Cena CSS renderizada');
+                }
+            }
+            
+            return 'Diagnóstico completo. Verifique o console para mais detalhes.';
+        };
+        
+        // Registra como variável global para fácil acesso
+        window.hodlerVideoPlayerRef = hodlerVideoPlayer;
+        
+        console.log('[INSTRUÇÃO] Para diagnosticar problemas com o player, digite window.debugHodlerPlayer() no console');
     }, 2000);
 });
 
