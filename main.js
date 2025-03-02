@@ -819,34 +819,27 @@ function init() {
         createPortalMessage();
         mintButton = createMintButton(); // Armazenar o botão em uma variável global
         
-        // Cria o player de vídeo exclusivo apenas se o usuário tiver o Multiverso Pass
-        if (hasPass) {
-            console.log('🔵 INIT: Criando player para hodler...');
-            exclusiveVideoPlayer = createExclusiveVideoPlayer();
-            console.log('🔵 INIT: Player exclusivo criado com acesso'); 
-        } else {
-            // Sempre cria o player, mas deixa invisível - isso garante que ele exista para depuração
-            console.log('🔵 INIT: Criando player para fins de teste (sem acesso)...');
-            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+        // IMPORTANTE: Sempre criar o player de vídeo exclusivo, independente do acesso
+        // Isso garante que ele exista e possa ser mostrado quando o acesso for concedido
+        console.log('🔵 INIT: Criando player de vídeo exclusivo...');
+        exclusiveVideoPlayer = createExclusiveVideoPlayer();
+        
+        // Definir visibilidade com base no acesso
+        if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+            exclusiveVideoPlayer.videoGroup.visible = hasPass;
+            console.log('🔵 INIT: Player exclusivo criado e definido como:', hasPass ? 'VISÍVEL' : 'INVISÍVEL');
             
-            // Oculta todos os componentes se não tiver acesso
-            if (exclusiveVideoPlayer) {
-                if (exclusiveVideoPlayer.videoGroup) {
-                    exclusiveVideoPlayer.videoGroup.visible = false;
-                }
-                if (exclusiveVideoPlayer.particles) {
-                    exclusiveVideoPlayer.particles.visible = false;
-                }
-                if (exclusiveVideoPlayer.marker) {
-                    exclusiveVideoPlayer.marker.visible = false;
-                }
-                if (exclusiveVideoPlayer.halo) {
-                    exclusiveVideoPlayer.halo.visible = false;
-                }
-                if (exclusiveVideoPlayer.plane) {
-                    exclusiveVideoPlayer.plane.visible = false;
-                }
-                console.log('🔵 INIT: Player exclusivo criado, mas invisível (sem acesso)');
+            // Atualizar visibilidade dos elementos visuais auxiliares
+            if (exclusiveVideoPlayer.marker) exclusiveVideoPlayer.marker.visible = hasPass;
+            if (exclusiveVideoPlayer.particles) exclusiveVideoPlayer.particles.visible = hasPass;
+            if (exclusiveVideoPlayer.halo) exclusiveVideoPlayer.halo.visible = hasPass;
+            if (exclusiveVideoPlayer.plane) exclusiveVideoPlayer.plane.visible = hasPass;
+            if (exclusiveVideoPlayer.ambientLight) exclusiveVideoPlayer.ambientLight.visible = hasPass;
+            
+            // Forçar renderização imediata para garantir que o player seja exibido
+            if (cssRenderer && cssScene && camera) {
+                cssRenderer.render(cssScene, camera);
+                console.log('🔵 INIT: Forçando renderização CSS3D inicial');
             }
         }
         
@@ -875,8 +868,13 @@ function init() {
         // Importante: Usa a função updateExclusiveAccess para garantir consistência
         console.log('Verificando acesso inicial. Status do Multiverso Pass:', hasPass);
         updateExclusiveAccess(hasPass);
+        
+        // Adiciona evento para redimensionamento da janela
+        window.addEventListener('resize', onWindowResize);
+        
+        console.log('🔵 Inicialização concluída com sucesso');
     } catch (error) {
-        console.error("Error initializing scene:", error);
+        console.error('🔴 ERRO durante a inicialização:', error);
     }
 }
 
@@ -1721,7 +1719,7 @@ function animate() {
 }
 
 // Handle window resize
-window.addEventListener('resize', () => {
+function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     
@@ -1731,7 +1729,17 @@ window.addEventListener('resize', () => {
     if (controls) {
         controls.handleResize();
     }
-});
+    
+    // Forçar renderização imediata após redimensionamento
+    if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+    }
+    
+    if (cssRenderer && cssScene && camera) {
+        cssRenderer.render(cssScene, camera);
+        console.log('🔵 Forçando renderização CSS3D após redimensionamento');
+    }
+}
 
 // Instructions
 const instructions = document.createElement('div');
@@ -2268,7 +2276,7 @@ window.addEventListener('mousemove', checkMintButtonHover);
 
 // Função para criar o player de vídeo exclusivo para hodlers
 function createExclusiveVideoPlayer() {
-    console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers');
+    console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers - IMPLEMENTAÇÃO CORRIGIDA');
     
     try {
         // Dimensões do player exclusivo
@@ -2350,9 +2358,8 @@ function createExclusiveVideoPlayer() {
         console.log('🔵 Elementos DOM criados com sucesso:', videoElement.id, videoElementBack.id);
         
         // POSIÇÃO AJUSTADA: Definir coordenadas exatas baseadas no terreno exclusivo
-        // O terreno exclusivo está posicionado em z = -14500 (aproximadamente)
         const terrainLimit = 7000;
-        // Posicionar o player no centro do terreno exclusivo
+        // Posicionar o player no centro do terreno exclusivo, mais próximo do portal
         const playerZ = -terrainLimit - 3000; // Posição Z ajustada para ficar mais próximo do portal
         const playerY = 1500;   // Altura ajustada para maior visibilidade
         
