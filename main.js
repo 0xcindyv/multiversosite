@@ -2335,28 +2335,31 @@ window.addEventListener('mousemove', checkMintButtonHover);
 
 // Função para criar o player de vídeo exclusivo para hodlers
 function createExclusiveVideoPlayer() {
-    console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers - IMPLEMENTAÇÃO DEFINITIVA');
+    // Registramos o início da criação do player exclusivo
+    console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers - SOLUÇÃO DEFINITIVA');
     
     try {
-        // Remover qualquer player existente para evitar duplicatas
+        // Limpeza completa de qualquer player existente
+        // Removemos elementos DOM antigos
         document.querySelectorAll('.exclusive-video-player').forEach(el => el.remove());
         document.querySelectorAll('[id^="exclusive-video-"]').forEach(el => el.remove());
         
-        // Remover objetos 3D relacionados ao player anterior
+        // Removemos objetos 3D relacionados ao player anterior
         scene.children.forEach(child => {
             if (child.name && (
                 child.name.includes('exclusive-video-marker') || 
                 child.name.includes('exclusive-video-backup') ||
                 child.name.includes('exclusive-video-particles') ||
                 child.name.includes('exclusive-video-halo') ||
-                child.name.includes('exclusive-video-ambient')
+                child.name.includes('exclusive-video-ambient') ||
+                child.name.includes('exclusive-video-light')
             )) {
                 scene.remove(child);
                 console.log('🔵 Removido objeto 3D antigo:', child.name);
             }
         });
         
-        // Remover grupos antigos da cena CSS3D
+        // Removemos grupos antigos da cena CSS3D
         cssScene.children.forEach(child => {
             if (child.name && child.name.includes('exclusive-video-group')) {
                 cssScene.remove(child);
@@ -2364,17 +2367,21 @@ function createExclusiveVideoPlayer() {
             }
         });
         
-        // DIMENSÕES E POSICIONAMENTO
+        // Definimos dimensões e posicionamento precisos
         const EXCLUSIVE_VIDEO_WIDTH = 900;
         const EXCLUSIVE_VIDEO_HEIGHT = 500;
         const terrainLimit = 7000;
+        
+        // Posicionamos o player no centro do terreno exclusivo, mais próximo do portal
+        // Usamos coordenadas absolutas para evitar problemas de referência
         const playerZ = -terrainLimit - 3000; // Posição Z ajustada para ficar mais próximo do portal
         const playerY = 1500;   // Altura ajustada para maior visibilidade
+        const playerX = 0;      // Centralizado no eixo X
         
-        console.log('🔵 Posicionando player em coordenadas: X=0, Y=' + playerY + ', Z=' + playerZ);
+        console.log('🔵 Posicionando player em coordenadas absolutas: X=' + playerX + ', Y=' + playerY + ', Z=' + playerZ);
         
-        // CRIAÇÃO DOS ELEMENTOS DOM
-        // Elemento frontal
+        // ABORDAGEM 1: CRIAÇÃO DO PLAYER CSS3D
+        // Criamos o elemento DOM para o player (frente)
         const videoElement = document.createElement('div');
         videoElement.className = 'exclusive-video-player';
         videoElement.style.width = EXCLUSIVE_VIDEO_WIDTH + 'px';
@@ -2386,7 +2393,7 @@ function createExclusiveVideoPlayer() {
         videoElement.style.pointerEvents = 'auto';
         videoElement.style.boxShadow = '0 0 50px #FF00FF, 0 0 100px #FF00FF'; // Brilho duplo mais intenso
         
-        // Título do player exclusivo
+        // Título do player exclusivo com animação
         const titleElement = document.createElement('div');
         titleElement.textContent = '✨ CONTEÚDO EXCLUSIVO PARA HODLERS ✨';
         titleElement.style.backgroundColor = '#FF00FF'; // Magenta puro
@@ -2397,7 +2404,7 @@ function createExclusiveVideoPlayer() {
         titleElement.style.textAlign = 'center';
         titleElement.style.textShadow = '0 0 10px white'; // Adiciona brilho ao texto
         
-        // Adiciona animação diretamente no elemento
+        // Adicionamos animação diretamente no elemento
         titleElement.style.animation = 'pulse 1s infinite';
         const styleElement = document.createElement('style');
         styleElement.textContent = `
@@ -2422,22 +2429,22 @@ function createExclusiveVideoPlayer() {
         iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
         iframe.allowFullscreen = true;
         
-        // Adiciona iframe ao elemento DOM
+        // Adicionamos iframe ao elemento DOM
         videoElement.appendChild(iframe);
         
-        // Clone do elemento para o verso
+        // Criamos o elemento DOM para o player (verso)
         const videoElementBack = videoElement.cloneNode(true);
         
-        // Garantir IDs exclusivos
+        // Garantimos IDs exclusivos com timestamp para evitar conflitos
         const videoId = 'exclusive-video-' + Date.now();
         videoElement.id = videoId + '-front';
         videoElementBack.id = videoId + '-back';
         
-        // Adiciona elementos ao DOM antes de criar objetos 3D
+        // IMPORTANTE: Adicionamos elementos ao DOM antes de criar objetos 3D
         document.body.appendChild(videoElement);
         document.body.appendChild(videoElementBack);
         
-        // Esconder elementos do DOM visível (serão renderizados pelo CSS3D)
+        // Escondemos elementos do DOM visível (serão renderizados pelo CSS3D)
         videoElement.style.position = 'absolute';
         videoElement.style.left = '-9999px';
         videoElementBack.style.position = 'absolute';
@@ -2445,33 +2452,32 @@ function createExclusiveVideoPlayer() {
         
         console.log('🔵 Elementos DOM criados com sucesso:', videoElement.id, videoElementBack.id);
         
-        // CRIAÇÃO DOS OBJETOS 3D
-        // Grupo para conter os dois lados do player
+        // Criamos o grupo para conter os dois lados do player
         const videoGroup = new THREE.Group();
         videoGroup.name = 'exclusive-video-group-' + Date.now();
         
-        // Objeto CSS3D para frente
+        // Criamos o objeto CSS3D para frente
         const videoObject = new CSS3DObject(videoElement);
-        videoObject.position.set(0, playerY, playerZ);
+        videoObject.position.set(playerX, playerY, playerZ);
         videoObject.scale.set(3, 3, 3); // Escala aumentada para maior visibilidade
         
-        // Objeto CSS3D para verso
+        // Criamos o objeto CSS3D para verso
         const videoObjectBack = new CSS3DObject(videoElementBack);
-        videoObjectBack.position.set(0, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
+        videoObjectBack.position.set(playerX, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
         videoObjectBack.scale.set(3, 3, 3);
         videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
         
-        // Adiciona os dois lados ao grupo
+        // Adicionamos os dois lados ao grupo
         videoGroup.add(videoObject);
         videoGroup.add(videoObjectBack);
         
-        // IMPORTANTE: Adicionar explicitamente à cena CSS3D
+        // CRUCIAL: Adicionamos explicitamente à cena CSS3D
         cssScene.add(videoGroup);
         
-        console.log('🔵 Player adicionado à cena CSS3D. Group ID:', videoGroup.id, 'Group Name:', videoGroup.name);
+        console.log('🔵 Player CSS3D adicionado à cena. Group ID:', videoGroup.id, 'Group Name:', videoGroup.name);
         
-        // ELEMENTOS VISUAIS AUXILIARES
-        // 1. Marcador visual acima do player
+        // ABORDAGEM 2: ELEMENTOS VISUAIS AUXILIARES
+        // Criamos um marcador visual acima do player
         const markerGeometry = new THREE.SphereGeometry(300, 32, 32);
         const markerMaterial = new THREE.MeshBasicMaterial({
             color: 0xFF00FF,
@@ -2482,11 +2488,11 @@ function createExclusiveVideoPlayer() {
         });
         
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.set(0, playerY + 500, playerZ);
+        marker.position.set(playerX, playerY + 500, playerZ);
         marker.name = 'exclusive-video-marker';
         scene.add(marker);
         
-        // 2. Plano de backup
+        // Criamos um plano de backup como fallback visual
         const planeGeometry = new THREE.PlaneGeometry(EXCLUSIVE_VIDEO_WIDTH * 2, EXCLUSIVE_VIDEO_HEIGHT * 2);
         const planeMaterial = new THREE.MeshBasicMaterial({
             color: 0xFF00FF,
@@ -2496,14 +2502,14 @@ function createExclusiveVideoPlayer() {
         });
         
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.position.set(0, playerY, playerZ + 10);
+        plane.position.set(playerX, playerY, playerZ + 10);
         plane.name = 'exclusive-video-backup-plane';
         scene.add(plane);
         
-        // 3. Luzes para iluminar o player
+        // Adicionamos luzes intensas para iluminar o player
         const spotLight1 = new THREE.SpotLight(0xFF00FF, 30);
-        spotLight1.position.set(-200, playerY + 500, playerZ - 200);
-        spotLight1.target.position.set(0, playerY, playerZ);
+        spotLight1.position.set(playerX - 200, playerY + 500, playerZ - 200);
+        spotLight1.target.position.set(playerX, playerY, playerZ);
         spotLight1.angle = Math.PI / 2;
         spotLight1.penumbra = 0.2;
         spotLight1.distance = 10000;
@@ -2512,8 +2518,8 @@ function createExclusiveVideoPlayer() {
         scene.add(spotLight1.target);
         
         const spotLight2 = new THREE.SpotLight(0xFF00FF, 30);
-        spotLight2.position.set(200, playerY + 500, playerZ - 200);
-        spotLight2.target.position.set(0, playerY, playerZ);
+        spotLight2.position.set(playerX + 200, playerY + 500, playerZ - 200);
+        spotLight2.target.position.set(playerX, playerY, playerZ);
         spotLight2.angle = Math.PI / 2;
         spotLight2.penumbra = 0.2;
         spotLight2.distance = 10000;
@@ -2521,23 +2527,24 @@ function createExclusiveVideoPlayer() {
         scene.add(spotLight2);
         scene.add(spotLight2.target);
         
-        // 4. Luz ambiente
+        // Adicionamos uma luz ambiente para garantir visibilidade
         const ambientLight = new THREE.AmbientLight(0xFF00FF, 2);
-        ambientLight.position.set(0, playerY, playerZ);
+        ambientLight.position.set(playerX, playerY, playerZ);
         ambientLight.name = 'exclusive-video-ambient';
         scene.add(ambientLight);
         
-        // 5. Partículas brilhantes
+        // Criamos partículas brilhantes ao redor do player
         const particleCount = 2000;
         const particleGeometry = new THREE.BufferGeometry();
         const particlePositions = new Float32Array(particleCount * 3);
         
+        // Distribuímos partículas em uma esfera ao redor do player
         for (let i = 0; i < particleCount; i++) {
             const radius = 800;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.random() * Math.PI;
             
-            particlePositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            particlePositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta) + playerX;
             particlePositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
             particlePositions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
         }
@@ -2556,7 +2563,7 @@ function createExclusiveVideoPlayer() {
         particles.name = 'exclusive-video-particles';
         scene.add(particles);
         
-        // 6. Halo
+        // Adicionamos um halo ao redor do player
         const haloGeometry = new THREE.RingGeometry(500, 1000, 32);
         const haloMaterial = new THREE.MeshBasicMaterial({
             color: 0xFF00FF,
@@ -2566,24 +2573,116 @@ function createExclusiveVideoPlayer() {
         });
         
         const halo = new THREE.Mesh(haloGeometry, haloMaterial);
-        halo.position.set(0, playerY, playerZ - 50);
+        halo.position.set(playerX, playerY, playerZ - 50);
         halo.rotation.x = Math.PI / 2;
         halo.name = 'exclusive-video-halo';
         scene.add(halo);
         
-        // ANIMAÇÕES
+        // ABORDAGEM 3: PLAYER HTML DIRETO (FALLBACK)
+        // Criamos um elemento HTML fixo como último recurso
+        const fixedPlayerContainer = document.createElement('div');
+        fixedPlayerContainer.id = 'fixed-exclusive-player';
+        fixedPlayerContainer.style.position = 'fixed';
+        fixedPlayerContainer.style.top = '50%';
+        fixedPlayerContainer.style.left = '50%';
+        fixedPlayerContainer.style.transform = 'translate(-50%, -50%)';
+        fixedPlayerContainer.style.width = EXCLUSIVE_VIDEO_WIDTH + 'px';
+        fixedPlayerContainer.style.height = EXCLUSIVE_VIDEO_HEIGHT + 'px';
+        fixedPlayerContainer.style.backgroundColor = '#000000';
+        fixedPlayerContainer.style.border = '20px solid #FF00FF';
+        fixedPlayerContainer.style.borderRadius = '15px';
+        fixedPlayerContainer.style.overflow = 'hidden';
+        fixedPlayerContainer.style.zIndex = '1000';
+        fixedPlayerContainer.style.boxShadow = '0 0 50px #FF00FF, 0 0 100px #FF00FF';
+        fixedPlayerContainer.style.display = 'none'; // Inicialmente oculto
+        
+        // Título para o player fixo
+        const fixedTitleElement = document.createElement('div');
+        fixedTitleElement.textContent = '✨ CONTEÚDO EXCLUSIVO PARA HODLERS ✨';
+        fixedTitleElement.style.backgroundColor = '#FF00FF';
+        fixedTitleElement.style.color = 'white';
+        fixedTitleElement.style.padding = '15px';
+        fixedTitleElement.style.fontSize = '24px';
+        fixedTitleElement.style.fontWeight = 'bold';
+        fixedTitleElement.style.textAlign = 'center';
+        fixedTitleElement.style.textShadow = '0 0 10px white';
+        fixedTitleElement.style.animation = 'pulse 1s infinite';
+        
+        fixedPlayerContainer.appendChild(fixedTitleElement);
+        
+        // Iframe para o player fixo
+        const fixedIframe = document.createElement('iframe');
+        fixedIframe.style.width = '100%';
+        fixedIframe.style.height = (EXCLUSIVE_VIDEO_HEIGHT - 54) + 'px';
+        fixedIframe.style.border = 'none';
+        fixedIframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c?autoplay=true&loop=true&muted=false';
+        fixedIframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        fixedIframe.allowFullscreen = true;
+        
+        fixedPlayerContainer.appendChild(fixedIframe);
+        
+        // Botão para fechar o player fixo
+        const closeButton = document.createElement('button');
+        closeButton.textContent = 'X';
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '10px';
+        closeButton.style.right = '10px';
+        closeButton.style.backgroundColor = '#FF00FF';
+        closeButton.style.color = 'white';
+        closeButton.style.border = 'none';
+        closeButton.style.borderRadius = '50%';
+        closeButton.style.width = '30px';
+        closeButton.style.height = '30px';
+        closeButton.style.fontSize = '16px';
+        closeButton.style.fontWeight = 'bold';
+        closeButton.style.cursor = 'pointer';
+        closeButton.style.zIndex = '1001';
+        
+        closeButton.addEventListener('click', () => {
+            fixedPlayerContainer.style.display = 'none';
+        });
+        
+        fixedPlayerContainer.appendChild(closeButton);
+        
+        // Botão para reabrir o player fixo
+        const reopenButton = document.createElement('button');
+        reopenButton.id = 'reopen-exclusive-video';
+        reopenButton.textContent = '🎬 Abrir Vídeo Exclusivo';
+        reopenButton.style.position = 'fixed';
+        reopenButton.style.bottom = '20px';
+        reopenButton.style.right = '20px';
+        reopenButton.style.backgroundColor = '#FF00FF';
+        reopenButton.style.color = 'white';
+        reopenButton.style.border = 'none';
+        reopenButton.style.borderRadius = '8px';
+        reopenButton.style.padding = '10px 20px';
+        reopenButton.style.fontSize = '16px';
+        reopenButton.style.fontWeight = 'bold';
+        reopenButton.style.cursor = 'pointer';
+        reopenButton.style.zIndex = '1000';
+        reopenButton.style.display = 'none'; // Inicialmente oculto
+        
+        reopenButton.addEventListener('click', () => {
+            fixedPlayerContainer.style.display = 'block';
+            reopenButton.style.display = 'none';
+        });
+        
+        document.body.appendChild(fixedPlayerContainer);
+        document.body.appendChild(reopenButton);
+        
+        // ANIMAÇÕES E MONITORAMENTO
         // Função para animar os elementos visuais
         function animateElements() {
             const animationId = requestAnimationFrame(animateElements);
             const time = Date.now() * 0.001;
             
-            // Animar o marcador
+            // Animamos o marcador
             if (marker) {
                 marker.position.y = playerY + 500 + Math.sin(time) * 200;
                 marker.scale.setScalar(1 + Math.sin(time * 0.5) * 0.7);
             }
             
-            // Animar o halo
+            // Animamos o halo
             if (halo) {
                 halo.scale.set(
                     1 + Math.sin(time * 0.7) * 0.5,
@@ -2594,7 +2693,7 @@ function createExclusiveVideoPlayer() {
                 haloMaterial.opacity = 0.5 + Math.sin(time) * 0.5;
             }
             
-            // Animar as partículas
+            // Animamos as partículas
             if (particles && particles.geometry.attributes.position) {
                 const positions = particles.geometry.attributes.position.array;
                 for (let i = 0; i < particleCount; i++) {
@@ -2602,9 +2701,9 @@ function createExclusiveVideoPlayer() {
                     positions[i * 3 + 1] += Math.cos(time + i * 0.01) * 2;
                     positions[i * 3 + 2] += Math.sin(time * 0.5 + i * 0.01) * 2;
                     
-                    // Reposicionar partículas que saem muito do limite
+                    // Reposicionamos partículas que saem muito do limite
                     const distance = Math.sqrt(
-                        Math.pow(positions[i * 3], 2) +
+                        Math.pow(positions[i * 3] - playerX, 2) +
                         Math.pow(positions[i * 3 + 1] - playerY, 2) +
                         Math.pow(positions[i * 3 + 2] - playerZ, 2)
                     );
@@ -2614,7 +2713,7 @@ function createExclusiveVideoPlayer() {
                         const theta = Math.random() * Math.PI * 2;
                         const phi = Math.random() * Math.PI;
                         
-                        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta) + playerX;
                         positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
                         positions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
                     }
@@ -2622,36 +2721,43 @@ function createExclusiveVideoPlayer() {
                 particles.geometry.attributes.position.needsUpdate = true;
             }
             
-            // Armazenar o ID da animação para poder cancelá-la se necessário
+            // Armazenamos o ID da animação para poder cancelá-la se necessário
             videoGroup.userData.animationId = animationId;
         }
         
-        // Iniciar animações
+        // Iniciamos as animações
         animateElements();
         
-        // SISTEMA DE MONITORAMENTO E RECUPERAÇÃO
-        // Verificação periódica para garantir que o player permaneça na cena
+        // Sistema de monitoramento e recuperação
         const debugInterval = setInterval(() => {
-            // Verificar se o grupo ainda faz parte da cena
+            // Verificamos se o usuário tem acesso
+            const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+            
+            // Verificamos se o grupo ainda faz parte da cena CSS3D
             const isInScene = cssScene.children.includes(videoGroup);
-            if (!isInScene) {
+            if (!isInScene && hasAccess) {
                 console.log('🔴 ALERTA: Player exclusivo foi removido da cena CSS3D!');
-                cssScene.add(videoGroup); // Readicionar à cena
+                cssScene.add(videoGroup); // Readicionamos à cena
                 console.log('🔵 Player readicionado à cena CSS3D');
+                
+                // Forçamos renderização após readicionar
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                }
             }
             
-            // Verificar visibilidade
-            const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+            // Verificamos visibilidade
             const visibilityStatus = videoGroup.visible ? 'visível' : 'invisível';
             console.log(`🔵 Status do player exclusivo: ${visibilityStatus}, Acesso: ${hasAccess}`);
             
-            // Verificar se os elementos DOM ainda existem
+            // Verificamos se os elementos DOM ainda existem
             const domElementFront = document.getElementById(videoId + '-front');
             const domElementBack = document.getElementById(videoId + '-back');
-            if (!domElementFront || !domElementBack) {
+            
+            if ((!domElementFront || !domElementBack) && hasAccess) {
                 console.log('🔴 ALERTA: Elementos DOM do player foram removidos!');
                 
-                // Recriar os elementos removidos
+                // Recriamos os elementos removidos
                 if (!domElementFront) {
                     document.body.appendChild(videoElement);
                     console.log('🔵 Elemento DOM frontal recriado');
@@ -2661,22 +2767,33 @@ function createExclusiveVideoPlayer() {
                     document.body.appendChild(videoElementBack);
                     console.log('🔵 Elemento DOM traseiro recriado');
                 }
+                
+                // Forçamos renderização após recriar elementos
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                }
             }
             
-            // Forçar renderização CSS3D
-            if (cssRenderer && cssScene && camera) {
+            // Verificamos se o player CSS3D está funcionando, caso contrário ativamos o fallback
+            if (hasAccess && (!isInScene || !domElementFront || !domElementBack)) {
+                console.log('🔴 ALERTA: Player CSS3D não está funcionando corretamente! Ativando fallback HTML...');
+                fixedPlayerContainer.style.display = 'block';
+            }
+            
+            // Forçamos renderização CSS3D periodicamente
+            if (cssRenderer && cssScene && camera && hasAccess) {
                 cssRenderer.render(cssScene, camera);
-                console.log('🔵 Forçando re-renderização CSS3D');
+                console.log('🔵 Forçando re-renderização CSS3D periódica');
             }
         }, 5000); // Verificação a cada 5 segundos
         
-        // FORÇAR RENDERIZAÇÃO INICIAL
+        // FORÇAMOS RENDERIZAÇÃO INICIAL
         // Isso é crucial para garantir que o player seja exibido imediatamente
         if (cssRenderer && cssScene && camera) {
             cssRenderer.render(cssScene, camera);
             console.log('🔵 Forçando renderização CSS3D inicial');
             
-            // Renderizar novamente após um pequeno atraso para garantir
+            // Renderizamos novamente após um pequeno atraso para garantir
             setTimeout(() => {
                 if (cssRenderer && cssScene && camera) {
                     cssRenderer.render(cssScene, camera);
@@ -2687,7 +2804,7 @@ function createExclusiveVideoPlayer() {
         
         console.log('🔵 Player exclusivo criado com sucesso. Iniciando animações e monitoramento.');
         
-        // Retornar as referências para controle
+        // Retornamos todas as referências para controle
         return {
             videoGroup,
             videoObject,
@@ -2699,14 +2816,16 @@ function createExclusiveVideoPlayer() {
             ambientLight,
             spotLight1,
             spotLight2,
+            fixedPlayerContainer,
+            reopenButton,
             debugInterval,
-            position: { x: 0, y: playerY, z: playerZ },
+            position: { x: playerX, y: playerY, z: playerZ },
             domElements: { front: videoElement, back: videoElementBack }
         };
     } catch (error) {
         console.error('🔴 ERRO ao criar player exclusivo:', error);
         
-        // Criar um marcador de emergência para indicar onde o player deveria estar
+        // Em caso de erro, criamos um marcador de emergência
         const emergencyMarker = new THREE.Mesh(
             new THREE.SphereGeometry(500, 32, 32),
             new THREE.MeshBasicMaterial({ color: 0xFF0000, transparent: true, opacity: 0.8 })
@@ -2715,9 +2834,60 @@ function createExclusiveVideoPlayer() {
         emergencyMarker.name = 'emergency-marker';
         scene.add(emergencyMarker);
         
+        // Ativamos o player HTML como fallback de emergência
+        const emergencyPlayer = document.createElement('div');
+        emergencyPlayer.id = 'emergency-player';
+        emergencyPlayer.style.position = 'fixed';
+        emergencyPlayer.style.top = '50%';
+        emergencyPlayer.style.left = '50%';
+        emergencyPlayer.style.transform = 'translate(-50%, -50%)';
+        emergencyPlayer.style.width = '900px';
+        emergencyPlayer.style.height = '500px';
+        emergencyPlayer.style.backgroundColor = '#000000';
+        emergencyPlayer.style.border = '20px solid #FF0000';
+        emergencyPlayer.style.borderRadius = '15px';
+        emergencyPlayer.style.overflow = 'hidden';
+        emergencyPlayer.style.zIndex = '1000';
+        emergencyPlayer.style.boxShadow = '0 0 50px #FF0000';
+        emergencyPlayer.style.display = 'none'; // Inicialmente oculto
+        
+        const emergencyTitle = document.createElement('div');
+        emergencyTitle.textContent = '⚠️ CONTEÚDO EXCLUSIVO (MODO DE EMERGÊNCIA) ⚠️';
+        emergencyTitle.style.backgroundColor = '#FF0000';
+        emergencyTitle.style.color = 'white';
+        emergencyTitle.style.padding = '15px';
+        emergencyTitle.style.fontSize = '24px';
+        emergencyTitle.style.fontWeight = 'bold';
+        emergencyTitle.style.textAlign = 'center';
+        
+        emergencyPlayer.appendChild(emergencyTitle);
+        
+        const emergencyIframe = document.createElement('iframe');
+        emergencyIframe.style.width = '100%';
+        emergencyIframe.style.height = '446px';
+        emergencyIframe.style.border = 'none';
+        emergencyIframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c?autoplay=true&loop=true&muted=false';
+        emergencyIframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        emergencyIframe.allowFullscreen = true;
+        
+        emergencyPlayer.appendChild(emergencyIframe);
+        document.body.appendChild(emergencyPlayer);
+        
+        // Verificamos periodicamente se o usuário tem acesso para mostrar o player de emergência
+        const emergencyInterval = setInterval(() => {
+            const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
+            if (hasAccess) {
+                emergencyPlayer.style.display = 'block';
+            } else {
+                emergencyPlayer.style.display = 'none';
+            }
+        }, 2000);
+        
         return {
             videoGroup: null,
             marker: emergencyMarker,
+            emergencyPlayer,
+            emergencyInterval,
             position: { x: 0, y: 1500, z: -10000 }
         };
     }
