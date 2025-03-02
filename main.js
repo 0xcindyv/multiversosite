@@ -1702,6 +1702,31 @@ function animate() {
             if (exclusiveVideoPlayer.halo) exclusiveVideoPlayer.halo.visible = hasMultiversoPass;
             if (exclusiveVideoPlayer.plane) exclusiveVideoPlayer.plane.visible = hasMultiversoPass;
             if (exclusiveVideoPlayer.ambientLight) exclusiveVideoPlayer.ambientLight.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.spotLight1) exclusiveVideoPlayer.spotLight1.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.spotLight2) exclusiveVideoPlayer.spotLight2.visible = hasMultiversoPass;
+            
+            // Verificar se os elementos DOM ainda existem
+            if (hasMultiversoPass && exclusiveVideoPlayer.domElements) {
+                const { front, back } = exclusiveVideoPlayer.domElements;
+                if (front && !document.body.contains(front)) {
+                    console.log('🔴 ALERTA: Elemento DOM frontal não está no documento durante animação! Readicionando...');
+                    document.body.appendChild(front);
+                }
+                
+                if (back && !document.body.contains(back)) {
+                    console.log('🔴 ALERTA: Elemento DOM traseiro não está no documento durante animação! Readicionando...');
+                    document.body.appendChild(back);
+                }
+            }
+        } else if (hasMultiversoPass) {
+            // Se o player não existe mas o usuário tem acesso, criar o player
+            console.log('🔴 ALERTA: Player exclusivo não existe durante animação mas usuário tem acesso! Criando...');
+            exclusiveVideoPlayer = createExclusiveVideoPlayer();
+            
+            if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
+                exclusiveVideoPlayer.videoGroup.visible = true;
+                console.log('🔵 Player exclusivo criado durante animação');
+            }
         }
         
         // Renderizar a cena principal
@@ -1952,6 +1977,16 @@ function updateExclusiveAccess(hasAccess) {
                 console.log('🔵 Luz ambiente de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
             }
             
+            if (exclusiveVideoPlayer.spotLight1) {
+                exclusiveVideoPlayer.spotLight1.visible = hasAccessBoolean;
+                console.log('🔵 Luz spot 1 de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
+            }
+            
+            if (exclusiveVideoPlayer.spotLight2) {
+                exclusiveVideoPlayer.spotLight2.visible = hasAccessBoolean;
+                console.log('🔵 Luz spot 2 de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
+            }
+            
             // Se o usuário tem acesso, verificar se o player está realmente na cena CSS3D
             if (hasAccessBoolean && exclusiveVideoPlayer.videoGroup && cssScene) {
                 const isInScene = cssScene.children.includes(exclusiveVideoPlayer.videoGroup);
@@ -1989,6 +2024,20 @@ function updateExclusiveAccess(hasAccess) {
             if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
                 exclusiveVideoPlayer.videoGroup.visible = hasAccessBoolean;
                 console.log('🔵 Player exclusivo criado e definido como:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
+                
+                // Forçar a renderização CSS3D após criar o player
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                    console.log('🔵 Forçando renderização CSS3D após criar o player');
+                    
+                    // Renderizar novamente após um pequeno atraso para garantir
+                    setTimeout(() => {
+                        if (cssRenderer && cssScene && camera) {
+                            cssRenderer.render(cssScene, camera);
+                            console.log('🔵 Forçando segunda renderização CSS3D após delay');
+                        }
+                    }, 500);
+                }
             }
         }
         
@@ -2002,6 +2051,16 @@ function updateExclusiveAccess(hasAccess) {
         updateExclusiveAccessMessage(hasAccessBoolean);
         
         console.log('🔵 Acesso exclusivo atualizado com sucesso');
+        
+        // Forçar renderização final para garantir que todas as mudanças sejam aplicadas
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+        
+        if (cssRenderer && cssScene && camera) {
+            cssRenderer.render(cssScene, camera);
+            console.log('🔵 Forçando renderização CSS3D final após todas as atualizações');
+        }
     } catch (error) {
         console.error('🔴 ERRO ao atualizar acesso exclusivo:', error);
     }
@@ -2276,18 +2335,46 @@ window.addEventListener('mousemove', checkMintButtonHover);
 
 // Função para criar o player de vídeo exclusivo para hodlers
 function createExclusiveVideoPlayer() {
-    console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers - IMPLEMENTAÇÃO CORRIGIDA');
+    console.log('🔵 INICIO: Criando player de vídeo exclusivo para hodlers - IMPLEMENTAÇÃO DEFINITIVA');
     
     try {
-        // Dimensões do player exclusivo
-        const EXCLUSIVE_VIDEO_WIDTH = 900;
-        const EXCLUSIVE_VIDEO_HEIGHT = 500;
-        
         // Remover qualquer player existente para evitar duplicatas
         document.querySelectorAll('.exclusive-video-player').forEach(el => el.remove());
         document.querySelectorAll('[id^="exclusive-video-"]').forEach(el => el.remove());
         
-        // Criar elemento DOM para o player exclusivo (frente)
+        // Remover objetos 3D relacionados ao player anterior
+        scene.children.forEach(child => {
+            if (child.name && (
+                child.name.includes('exclusive-video-marker') || 
+                child.name.includes('exclusive-video-backup') ||
+                child.name.includes('exclusive-video-particles') ||
+                child.name.includes('exclusive-video-halo') ||
+                child.name.includes('exclusive-video-ambient')
+            )) {
+                scene.remove(child);
+                console.log('🔵 Removido objeto 3D antigo:', child.name);
+            }
+        });
+        
+        // Remover grupos antigos da cena CSS3D
+        cssScene.children.forEach(child => {
+            if (child.name && child.name.includes('exclusive-video-group')) {
+                cssScene.remove(child);
+                console.log('🔵 Removido grupo CSS3D antigo:', child.name);
+            }
+        });
+        
+        // DIMENSÕES E POSICIONAMENTO
+        const EXCLUSIVE_VIDEO_WIDTH = 900;
+        const EXCLUSIVE_VIDEO_HEIGHT = 500;
+        const terrainLimit = 7000;
+        const playerZ = -terrainLimit - 3000; // Posição Z ajustada para ficar mais próximo do portal
+        const playerY = 1500;   // Altura ajustada para maior visibilidade
+        
+        console.log('🔵 Posicionando player em coordenadas: X=0, Y=' + playerY + ', Z=' + playerZ);
+        
+        // CRIAÇÃO DOS ELEMENTOS DOM
+        // Elemento frontal
         const videoElement = document.createElement('div');
         videoElement.className = 'exclusive-video-player';
         videoElement.style.width = EXCLUSIVE_VIDEO_WIDTH + 'px';
@@ -2297,9 +2384,9 @@ function createExclusiveVideoPlayer() {
         videoElement.style.borderRadius = '15px';
         videoElement.style.overflow = 'hidden';
         videoElement.style.pointerEvents = 'auto';
-        videoElement.style.boxShadow = '0 0 50px #FF00FF'; // Brilho mais intenso
+        videoElement.style.boxShadow = '0 0 50px #FF00FF, 0 0 100px #FF00FF'; // Brilho duplo mais intenso
         
-        // Título do player exclusivo (frente)
+        // Título do player exclusivo
         const titleElement = document.createElement('div');
         titleElement.textContent = '✨ CONTEÚDO EXCLUSIVO PARA HODLERS ✨';
         titleElement.style.backgroundColor = '#FF00FF'; // Magenta puro
@@ -2308,9 +2395,10 @@ function createExclusiveVideoPlayer() {
         titleElement.style.fontSize = '24px';
         titleElement.style.fontWeight = 'bold';
         titleElement.style.textAlign = 'center';
+        titleElement.style.textShadow = '0 0 10px white'; // Adiciona brilho ao texto
         
-        // Adiciona animação diretamente no elemento para evitar problemas com CSS externo
-        titleElement.style.animation = 'pulse 1s infinite'; // Animação mais rápida
+        // Adiciona animação diretamente no elemento
+        titleElement.style.animation = 'pulse 1s infinite';
         const styleElement = document.createElement('style');
         styleElement.textContent = `
             @keyframes pulse {
@@ -2345,7 +2433,7 @@ function createExclusiveVideoPlayer() {
         videoElement.id = videoId + '-front';
         videoElementBack.id = videoId + '-back';
         
-        // Adiciona elementos ao DOM antes de criar objetos 3D para garantir que estejam no documento
+        // Adiciona elementos ao DOM antes de criar objetos 3D
         document.body.appendChild(videoElement);
         document.body.appendChild(videoElementBack);
         
@@ -2357,75 +2445,69 @@ function createExclusiveVideoPlayer() {
         
         console.log('🔵 Elementos DOM criados com sucesso:', videoElement.id, videoElementBack.id);
         
-        // POSIÇÃO AJUSTADA: Definir coordenadas exatas baseadas no terreno exclusivo
-        const terrainLimit = 7000;
-        // Posicionar o player no centro do terreno exclusivo, mais próximo do portal
-        const playerZ = -terrainLimit - 3000; // Posição Z ajustada para ficar mais próximo do portal
-        const playerY = 1500;   // Altura ajustada para maior visibilidade
-        
-        console.log('🔵 Posicionando player em coordenadas: X=0, Y=' + playerY + ', Z=' + playerZ);
-        
-        // Criar grupo para conter os dois lados do player
+        // CRIAÇÃO DOS OBJETOS 3D
+        // Grupo para conter os dois lados do player
         const videoGroup = new THREE.Group();
         videoGroup.name = 'exclusive-video-group-' + Date.now();
         
-        // Usar CSS3DObject para renderizar o elemento DOM no espaço 3D
+        // Objeto CSS3D para frente
         const videoObject = new CSS3DObject(videoElement);
-        videoObject.position.set(0, playerY, playerZ); // Coordenadas precisas
-        videoObject.scale.set(3, 3, 3); // Escala muito aumentada para maior visibilidade
+        videoObject.position.set(0, playerY, playerZ);
+        videoObject.scale.set(3, 3, 3); // Escala aumentada para maior visibilidade
         
+        // Objeto CSS3D para verso
         const videoObjectBack = new CSS3DObject(videoElementBack);
         videoObjectBack.position.set(0, playerY, playerZ - 1); // 1 unidade atrás para evitar z-fighting
-        videoObjectBack.scale.set(3, 3, 3); // Escala muito aumentada para maior visibilidade
+        videoObjectBack.scale.set(3, 3, 3);
         videoObjectBack.rotation.y = Math.PI; // Rotaciona 180 graus
         
         // Adiciona os dois lados ao grupo
         videoGroup.add(videoObject);
         videoGroup.add(videoObjectBack);
         
-        // Adicionar explicitamente à cena CSS3D (crucialmente importante)
+        // IMPORTANTE: Adicionar explicitamente à cena CSS3D
         cssScene.add(videoGroup);
         
         console.log('🔵 Player adicionado à cena CSS3D. Group ID:', videoGroup.id, 'Group Name:', videoGroup.name);
         
-        // Criar um grande marcador visual acima do player
-        // Isso garante que mesmo que o CSS3D não funcione, algo será visível
-        const markerGeometry = new THREE.SphereGeometry(300, 32, 32); // Tamanho muito aumentado
+        // ELEMENTOS VISUAIS AUXILIARES
+        // 1. Marcador visual acima do player
+        const markerGeometry = new THREE.SphereGeometry(300, 32, 32);
         const markerMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF00FF, // Magenta puro
+            color: 0xFF00FF,
             transparent: true,
-            opacity: 0.9, // Mais opaco
+            opacity: 0.9,
             emissive: 0xFF00FF,
-            emissiveIntensity: 2 // Intensidade aumentada
+            emissiveIntensity: 2
         });
         
-        // Adicionar a esfera marcadora
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.set(0, playerY + 500, playerZ); // Posicionado bem acima do player
+        marker.position.set(0, playerY + 500, playerZ);
         marker.name = 'exclusive-video-marker';
         scene.add(marker);
         
-        // Adicionar também um plano com textura como backup visual
+        // 2. Plano de backup
         const planeGeometry = new THREE.PlaneGeometry(EXCLUSIVE_VIDEO_WIDTH * 2, EXCLUSIVE_VIDEO_HEIGHT * 2);
         const planeMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF00FF, // Magenta puro
+            color: 0xFF00FF,
             transparent: true,
             opacity: 0.9,
             side: THREE.DoubleSide
         });
         
         const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-        plane.position.set(0, playerY, playerZ + 10); // Ligeiramente à frente do player
+        plane.position.set(0, playerY, playerZ + 10);
         plane.name = 'exclusive-video-backup-plane';
         scene.add(plane);
         
-        // Criar luzes para iluminar o player - ILUMINAÇÃO EXTREMAMENTE INTENSIFICADA
-        const spotLight1 = new THREE.SpotLight(0xFF00FF, 30); // Intensidade extremamente aumentada
+        // 3. Luzes para iluminar o player
+        const spotLight1 = new THREE.SpotLight(0xFF00FF, 30);
         spotLight1.position.set(-200, playerY + 500, playerZ - 200);
         spotLight1.target.position.set(0, playerY, playerZ);
-        spotLight1.angle = Math.PI / 2; // Ângulo muito mais amplo
+        spotLight1.angle = Math.PI / 2;
         spotLight1.penumbra = 0.2;
-        spotLight1.distance = 10000; // Alcance muito aumentado
+        spotLight1.distance = 10000;
+        spotLight1.name = 'exclusive-video-light-1';
         scene.add(spotLight1);
         scene.add(spotLight1.target);
         
@@ -2435,23 +2517,23 @@ function createExclusiveVideoPlayer() {
         spotLight2.angle = Math.PI / 2;
         spotLight2.penumbra = 0.2;
         spotLight2.distance = 10000;
+        spotLight2.name = 'exclusive-video-light-2';
         scene.add(spotLight2);
         scene.add(spotLight2.target);
         
-        // Adicionar uma luz ambiente para garantir visibilidade
-        const ambientLight = new THREE.AmbientLight(0xFF00FF, 2); // Intensidade dobrada
+        // 4. Luz ambiente
+        const ambientLight = new THREE.AmbientLight(0xFF00FF, 2);
         ambientLight.position.set(0, playerY, playerZ);
         ambientLight.name = 'exclusive-video-ambient';
         scene.add(ambientLight);
         
-        // Adicionar partículas brilhantes ao redor do player
-        const particleCount = 2000; // Muito mais partículas
+        // 5. Partículas brilhantes
+        const particleCount = 2000;
         const particleGeometry = new THREE.BufferGeometry();
         const particlePositions = new Float32Array(particleCount * 3);
         
-        // Distribuir partículas em uma esfera ao redor do player
         for (let i = 0; i < particleCount; i++) {
-            const radius = 800; // Raio muito maior
+            const radius = 800;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.random() * Math.PI;
             
@@ -2463,10 +2545,10 @@ function createExclusiveVideoPlayer() {
         particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
         
         const particleMaterial = new THREE.PointsMaterial({
-            color: 0xFF00FF, // Magenta puro
-            size: 30, // Tamanho muito aumentado
+            color: 0xFF00FF,
+            size: 30,
             transparent: true,
-            opacity: 0.9, // Mais opaco
+            opacity: 0.9,
             blending: THREE.AdditiveBlending
         });
         
@@ -2474,12 +2556,12 @@ function createExclusiveVideoPlayer() {
         particles.name = 'exclusive-video-particles';
         scene.add(particles);
         
-        // Adicionar um grande halo ao redor do player
-        const haloGeometry = new THREE.RingGeometry(500, 1000, 32); // Tamanho muito aumentado
+        // 6. Halo
+        const haloGeometry = new THREE.RingGeometry(500, 1000, 32);
         const haloMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF00FF, // Magenta puro
+            color: 0xFF00FF,
             transparent: true,
-            opacity: 0.7, // Mais opaco
+            opacity: 0.7,
             side: THREE.DoubleSide
         });
         
@@ -2489,87 +2571,119 @@ function createExclusiveVideoPlayer() {
         halo.name = 'exclusive-video-halo';
         scene.add(halo);
         
-        // Animar o marcador para torná-lo mais visível
+        // ANIMAÇÕES
+        // Função para animar os elementos visuais
         function animateElements() {
-            requestAnimationFrame(animateElements);
+            const animationId = requestAnimationFrame(animateElements);
             const time = Date.now() * 0.001;
             
             // Animar o marcador
-            marker.position.y = playerY + 500 + Math.sin(time) * 200; // Movimento muito mais amplo
-            marker.scale.setScalar(1 + Math.sin(time * 0.5) * 0.7); // Pulsação muito mais intensa
+            if (marker) {
+                marker.position.y = playerY + 500 + Math.sin(time) * 200;
+                marker.scale.setScalar(1 + Math.sin(time * 0.5) * 0.7);
+            }
             
             // Animar o halo
-            halo.scale.set(
-                1 + Math.sin(time * 0.7) * 0.5, // Pulsação muito mais intensa
-                1 + Math.sin(time * 0.7) * 0.5,
-                1
-            );
-            halo.rotation.z = time * 0.5; // Rotação muito mais rápida
-            haloMaterial.opacity = 0.5 + Math.sin(time) * 0.5; // Variação de opacidade muito mais intensa
+            if (halo) {
+                halo.scale.set(
+                    1 + Math.sin(time * 0.7) * 0.5,
+                    1 + Math.sin(time * 0.7) * 0.5,
+                    1
+                );
+                halo.rotation.z = time * 0.5;
+                haloMaterial.opacity = 0.5 + Math.sin(time) * 0.5;
+            }
             
             // Animar as partículas
-            const positions = particles.geometry.attributes.position.array;
-            for (let i = 0; i < particleCount; i++) {
-                positions[i * 3] += Math.sin(time + i * 0.01) * 2; // Movimento muito mais intenso
-                positions[i * 3 + 1] += Math.cos(time + i * 0.01) * 2;
-                positions[i * 3 + 2] += Math.sin(time * 0.5 + i * 0.01) * 2;
-                
-                // Reposicionar partículas que saem muito do limite
-                const distance = Math.sqrt(
-                    Math.pow(positions[i * 3], 2) +
-                    Math.pow(positions[i * 3 + 1] - playerY, 2) +
-                    Math.pow(positions[i * 3 + 2] - playerZ, 2)
-                );
-                
-                if (distance > 1000) { // Limite muito maior
-                    const radius = 800;
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.random() * Math.PI;
+            if (particles && particles.geometry.attributes.position) {
+                const positions = particles.geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    positions[i * 3] += Math.sin(time + i * 0.01) * 2;
+                    positions[i * 3 + 1] += Math.cos(time + i * 0.01) * 2;
+                    positions[i * 3 + 2] += Math.sin(time * 0.5 + i * 0.01) * 2;
                     
-                    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-                    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
-                    positions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
+                    // Reposicionar partículas que saem muito do limite
+                    const distance = Math.sqrt(
+                        Math.pow(positions[i * 3], 2) +
+                        Math.pow(positions[i * 3 + 1] - playerY, 2) +
+                        Math.pow(positions[i * 3 + 2] - playerZ, 2)
+                    );
+                    
+                    if (distance > 1000) {
+                        const radius = 800;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.random() * Math.PI;
+                        
+                        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                        positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) + playerY;
+                        positions[i * 3 + 2] = radius * Math.cos(phi) + playerZ;
+                    }
                 }
+                particles.geometry.attributes.position.needsUpdate = true;
             }
-            particles.geometry.attributes.position.needsUpdate = true;
+            
+            // Armazenar o ID da animação para poder cancelá-la se necessário
+            videoGroup.userData.animationId = animationId;
         }
         
         // Iniciar animações
         animateElements();
         
-        // Adicionar função de monitoramento para verificação de visibilidade e depuração
+        // SISTEMA DE MONITORAMENTO E RECUPERAÇÃO
+        // Verificação periódica para garantir que o player permaneça na cena
         const debugInterval = setInterval(() => {
             // Verificar se o grupo ainda faz parte da cena
             const isInScene = cssScene.children.includes(videoGroup);
             if (!isInScene) {
                 console.log('🔴 ALERTA: Player exclusivo foi removido da cena CSS3D!');
-                cssScene.add(videoGroup); // Tentar readicionar à cena
-                console.log('🔵 Tentativa de readicionar player à cena CSS3D');
+                cssScene.add(videoGroup); // Readicionar à cena
+                console.log('🔵 Player readicionado à cena CSS3D');
             }
             
             // Verificar visibilidade
+            const hasAccess = window.hasMultiversoPass === true || window.hasAccess === true;
             const visibilityStatus = videoGroup.visible ? 'visível' : 'invisível';
-            console.log(`🔵 Status do player exclusivo: ${visibilityStatus}, Posição:`, 
-                        videoObject.position.x, videoObject.position.y, videoObject.position.z);
+            console.log(`🔵 Status do player exclusivo: ${visibilityStatus}, Acesso: ${hasAccess}`);
             
-            // Verificar se os elementos DOM ainda estão intactos
+            // Verificar se os elementos DOM ainda existem
             const domElementFront = document.getElementById(videoId + '-front');
             const domElementBack = document.getElementById(videoId + '-back');
             if (!domElementFront || !domElementBack) {
                 console.log('🔴 ALERTA: Elementos DOM do player foram removidos!');
                 
-                // Tentar recriar os elementos removidos
-                document.body.appendChild(videoElement);
-                document.body.appendChild(videoElementBack);
-                console.log('🔵 Elementos DOM recriados');
+                // Recriar os elementos removidos
+                if (!domElementFront) {
+                    document.body.appendChild(videoElement);
+                    console.log('🔵 Elemento DOM frontal recriado');
+                }
+                
+                if (!domElementBack) {
+                    document.body.appendChild(videoElementBack);
+                    console.log('🔵 Elemento DOM traseiro recriado');
+                }
             }
             
-            // Força uma atualização do renderer CSS3D
-            if (cssRenderer) {
+            // Forçar renderização CSS3D
+            if (cssRenderer && cssScene && camera) {
                 cssRenderer.render(cssScene, camera);
                 console.log('🔵 Forçando re-renderização CSS3D');
             }
         }, 5000); // Verificação a cada 5 segundos
+        
+        // FORÇAR RENDERIZAÇÃO INICIAL
+        // Isso é crucial para garantir que o player seja exibido imediatamente
+        if (cssRenderer && cssScene && camera) {
+            cssRenderer.render(cssScene, camera);
+            console.log('🔵 Forçando renderização CSS3D inicial');
+            
+            // Renderizar novamente após um pequeno atraso para garantir
+            setTimeout(() => {
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                    console.log('🔵 Forçando segunda renderização CSS3D após delay');
+                }
+            }, 500);
+        }
         
         console.log('🔵 Player exclusivo criado com sucesso. Iniciando animações e monitoramento.');
         
@@ -2583,6 +2697,8 @@ function createExclusiveVideoPlayer() {
             halo,
             plane,
             ambientLight,
+            spotLight1,
+            spotLight2,
             debugInterval,
             position: { x: 0, y: playerY, z: playerZ },
             domElements: { front: videoElement, back: videoElementBack }
