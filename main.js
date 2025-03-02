@@ -1685,23 +1685,30 @@ function animate() {
             exclusiveLunarTerrain.visible = hasMultiversoPass;
         }
         
+        // VERIFICAÇÃO CRÍTICA DO PLAYER EXCLUSIVO
         // Garantir que o player exclusivo esteja visível para usuários com acesso
         if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
             // Verificar se o player está na cena CSS3D
             if (hasMultiversoPass && cssScene && !cssScene.children.includes(exclusiveVideoPlayer.videoGroup)) {
                 console.log('🔴 ALERTA: Player exclusivo não está na cena CSS3D durante animação! Readicionando...');
                 cssScene.add(exclusiveVideoPlayer.videoGroup);
+                
+                // Forçar renderização imediata após readicionar
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                }
             }
             
             // Garantir visibilidade correta
-            exclusiveVideoPlayer.videoGroup.visible = hasMultiversoPass;
+            if (hasMultiversoPass && !exclusiveVideoPlayer.videoGroup.visible) {
+                console.log('🔴 ALERTA: Player exclusivo está invisível mas usuário tem acesso! Corrigindo...');
+                exclusiveVideoPlayer.videoGroup.visible = true;
+            }
             
             // Garantir que os elementos visuais auxiliares estejam visíveis
             if (exclusiveVideoPlayer.marker) exclusiveVideoPlayer.marker.visible = hasMultiversoPass;
-            if (exclusiveVideoPlayer.particles) exclusiveVideoPlayer.particles.visible = hasMultiversoPass;
             if (exclusiveVideoPlayer.halo) exclusiveVideoPlayer.halo.visible = hasMultiversoPass;
-            if (exclusiveVideoPlayer.plane) exclusiveVideoPlayer.plane.visible = hasMultiversoPass;
-            if (exclusiveVideoPlayer.ambientLight) exclusiveVideoPlayer.ambientLight.visible = hasMultiversoPass;
+            if (exclusiveVideoPlayer.haloBack) exclusiveVideoPlayer.haloBack.visible = hasMultiversoPass;
             if (exclusiveVideoPlayer.spotLight1) exclusiveVideoPlayer.spotLight1.visible = hasMultiversoPass;
             if (exclusiveVideoPlayer.spotLight2) exclusiveVideoPlayer.spotLight2.visible = hasMultiversoPass;
             
@@ -1726,9 +1733,15 @@ function animate() {
             if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
                 exclusiveVideoPlayer.videoGroup.visible = true;
                 console.log('🔵 Player exclusivo criado durante animação');
+                
+                // Forçar renderização imediata após criar
+                if (cssRenderer && cssScene && camera) {
+                    cssRenderer.render(cssScene, camera);
+                }
             }
         }
         
+        // RENDERIZAÇÃO EXPLÍCITA
         // Renderizar a cena principal
         if (renderer && scene && camera) {
             renderer.render(scene, camera);
@@ -1935,6 +1948,7 @@ function updateExclusiveAccess(hasAccess) {
             console.log('🔴 Terreno exclusivo não encontrado!');
         }
         
+        // VERIFICAÇÃO CRÍTICA DO PLAYER EXCLUSIVO
         // Atualizar visibilidade do player de vídeo exclusivo
         if (exclusiveVideoPlayer) {
             // Garantir que o grupo de vídeo esteja visível para usuários com acesso
@@ -1942,10 +1956,27 @@ function updateExclusiveAccess(hasAccess) {
                 exclusiveVideoPlayer.videoGroup.visible = hasAccessBoolean;
                 console.log('🔵 Grupo de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
                 
+                // Se o usuário tem acesso, verificar se o player está realmente na cena CSS3D
+                if (hasAccessBoolean && cssScene) {
+                    const isInScene = cssScene.children.includes(exclusiveVideoPlayer.videoGroup);
+                    if (!isInScene) {
+                        console.log('🔴 ALERTA: Player exclusivo não está na cena CSS3D! Readicionando...');
+                        cssScene.add(exclusiveVideoPlayer.videoGroup);
+                    }
+                }
+                
                 // Forçar a renderização CSS3D para garantir que as mudanças sejam aplicadas
                 if (cssRenderer && cssScene && camera) {
                     cssRenderer.render(cssScene, camera);
                     console.log('🔵 Forçando renderização CSS3D após atualização de visibilidade');
+                    
+                    // Renderizar novamente após um pequeno atraso para garantir
+                    setTimeout(() => {
+                        if (cssRenderer && cssScene && camera) {
+                            cssRenderer.render(cssScene, camera);
+                            console.log('🔵 Forçando segunda renderização CSS3D após delay');
+                        }
+                    }, 500);
                 }
             } else {
                 console.log('🔴 Grupo de vídeo exclusivo não encontrado!');
@@ -1957,24 +1988,14 @@ function updateExclusiveAccess(hasAccess) {
                 console.log('🔵 Marcador de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
             }
             
-            if (exclusiveVideoPlayer.particles) {
-                exclusiveVideoPlayer.particles.visible = hasAccessBoolean;
-                console.log('🔵 Partículas de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEIS' : 'INVISÍVEIS');
-            }
-            
             if (exclusiveVideoPlayer.halo) {
                 exclusiveVideoPlayer.halo.visible = hasAccessBoolean;
                 console.log('🔵 Halo de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
             }
             
-            if (exclusiveVideoPlayer.plane) {
-                exclusiveVideoPlayer.plane.visible = hasAccessBoolean;
-                console.log('🔵 Plano de backup de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
-            }
-            
-            if (exclusiveVideoPlayer.ambientLight) {
-                exclusiveVideoPlayer.ambientLight.visible = hasAccessBoolean;
-                console.log('🔵 Luz ambiente de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
+            if (exclusiveVideoPlayer.haloBack) {
+                exclusiveVideoPlayer.haloBack.visible = hasAccessBoolean;
+                console.log('🔵 Halo traseiro de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
             }
             
             if (exclusiveVideoPlayer.spotLight1) {
@@ -1985,21 +2006,6 @@ function updateExclusiveAccess(hasAccess) {
             if (exclusiveVideoPlayer.spotLight2) {
                 exclusiveVideoPlayer.spotLight2.visible = hasAccessBoolean;
                 console.log('🔵 Luz spot 2 de vídeo exclusivo:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
-            }
-            
-            // Se o usuário tem acesso, verificar se o player está realmente na cena CSS3D
-            if (hasAccessBoolean && exclusiveVideoPlayer.videoGroup && cssScene) {
-                const isInScene = cssScene.children.includes(exclusiveVideoPlayer.videoGroup);
-                if (!isInScene) {
-                    console.log('🔴 ALERTA: Player exclusivo não está na cena CSS3D! Readicionando...');
-                    cssScene.add(exclusiveVideoPlayer.videoGroup);
-                    
-                    // Forçar a renderização CSS3D após readicionar
-                    if (cssRenderer && camera) {
-                        cssRenderer.render(cssScene, camera);
-                        console.log('🔵 Forçando renderização CSS3D após readicionar o player');
-                    }
-                }
             }
             
             // Verificar se os elementos DOM ainda existem
@@ -2015,15 +2021,15 @@ function updateExclusiveAccess(hasAccess) {
                     document.body.appendChild(back);
                 }
             }
-        } else {
+        } else if (hasAccessBoolean) {
             console.log('🔴 Player de vídeo exclusivo não encontrado! Tentando criar...');
             // Tentar criar o player se ele não existir
             exclusiveVideoPlayer = createExclusiveVideoPlayer();
             
             // Definir visibilidade após a criação
             if (exclusiveVideoPlayer && exclusiveVideoPlayer.videoGroup) {
-                exclusiveVideoPlayer.videoGroup.visible = hasAccessBoolean;
-                console.log('🔵 Player exclusivo criado e definido como:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
+                exclusiveVideoPlayer.videoGroup.visible = true;
+                console.log('🔵 Player exclusivo criado e definido como VISÍVEL');
                 
                 // Forçar a renderização CSS3D após criar o player
                 if (cssRenderer && cssScene && camera) {
@@ -2039,12 +2045,6 @@ function updateExclusiveAccess(hasAccess) {
                     }, 500);
                 }
             }
-        }
-        
-        // Atualizar visibilidade do botão de mint
-        if (mintButton) {
-            mintButton.visible = hasAccessBoolean;
-            console.log('🔵 Botão de mint:', hasAccessBoolean ? 'VISÍVEL' : 'INVISÍVEL');
         }
         
         // Atualizar mensagem de acesso exclusivo
@@ -2063,6 +2063,52 @@ function updateExclusiveAccess(hasAccess) {
         }
     } catch (error) {
         console.error('🔴 ERRO ao atualizar acesso exclusivo:', error);
+        
+        // Em caso de erro, tentar criar um player de emergência
+        if (hasAccess) {
+            try {
+                console.log('🟠 Tentando criar player de emergência...');
+                const emergencyPlayer = document.createElement('div');
+                emergencyPlayer.id = 'emergency-player';
+                emergencyPlayer.style.position = 'fixed';
+                emergencyPlayer.style.top = '50%';
+                emergencyPlayer.style.left = '50%';
+                emergencyPlayer.style.transform = 'translate(-50%, -50%)';
+                emergencyPlayer.style.width = '800px';
+                emergencyPlayer.style.height = '450px';
+                emergencyPlayer.style.backgroundColor = '#000000';
+                emergencyPlayer.style.border = '20px solid #FF0000';
+                emergencyPlayer.style.borderRadius = '15px';
+                emergencyPlayer.style.overflow = 'hidden';
+                emergencyPlayer.style.zIndex = '1000';
+                
+                const emergencyTitle = document.createElement('div');
+                emergencyTitle.textContent = '⚠️ CONTEÚDO EXCLUSIVO (MODO DE EMERGÊNCIA) ⚠️';
+                emergencyTitle.style.backgroundColor = '#FF0000';
+                emergencyTitle.style.color = 'white';
+                emergencyTitle.style.padding = '15px';
+                emergencyTitle.style.fontSize = '24px';
+                emergencyTitle.style.fontWeight = 'bold';
+                emergencyTitle.style.textAlign = 'center';
+                
+                emergencyPlayer.appendChild(emergencyTitle);
+                
+                const emergencyIframe = document.createElement('iframe');
+                emergencyIframe.style.width = '100%';
+                emergencyIframe.style.height = '396px';
+                emergencyIframe.style.border = 'none';
+                emergencyIframe.src = 'https://iframe.mediadelivery.net/embed/203779/9cc1bfec-5e6a-4a5e-b02f-8d7f6dcc9a4c?autoplay=true&loop=true&muted=false';
+                emergencyIframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                emergencyIframe.allowFullscreen = true;
+                
+                emergencyPlayer.appendChild(emergencyIframe);
+                document.body.appendChild(emergencyPlayer);
+                
+                console.log('🔵 Player de emergência criado com sucesso');
+            } catch (emergencyError) {
+                console.error('🔴 ERRO ao criar player de emergência:', emergencyError);
+            }
+        }
     }
 }
 
