@@ -172,6 +172,19 @@
             color: #ffcc00;
             border: 1px solid #ffcc00;
         }
+
+        /* Versão do player */
+        .version-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #FF00FF;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 10px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -195,6 +208,9 @@
             <strong>Nota:</strong> O Bunny Stream só permite acesso a partir dos domínios autorizados (multiverso.club e 0xcindyv.github.io/multiverso/). 
             Este player não funcionará localmente com o protocolo file://.
         </div>
+        <div style="margin-top: 15px; padding: 10px; background-color: rgba(0, 255, 0, 0.1); border-radius: 5px; font-size: 12px; color: #00cc00; border: 1px solid #00cc00;">
+            <strong>Teste GitHub Pages:</strong> Esta versão está sendo testada no GitHub Pages para verificar a autenticação do Bunny Stream em um domínio autorizado.
+        </div>
     </div>
 
     <div id="video-front" class="video-container">
@@ -212,6 +228,7 @@
     <div id="fallback-container"></div>
     <div id="error-message"></div>
     <div id="debug-panel" style="display: none;"></div>
+    <div class="version-info">Versão: 1.1 - Atualizado em: 03/03/2024</div>
 
     <!-- Importar Three.js diretamente - versão mais antiga e estável -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
