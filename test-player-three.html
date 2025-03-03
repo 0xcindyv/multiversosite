@@ -185,12 +185,38 @@
             font-size: 10px;
             z-index: 1000;
         }
+        
+        /* Botão de navegação para voltar à página principal */
+        .nav-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #FF00FF;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            text-decoration: none;
+            z-index: 1000;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background-color: #cc00cc;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
     <div id="container">
         <div id="css-renderer"></div>
     </div>
+
+    <!-- Botão de navegação para voltar à página principal -->
+    <a href="https://0xcindyv.github.io/multiverso/" class="nav-button">Voltar à Página Principal</a>
 
     <!-- Formulário para inserir a chave de autenticação -->
     <div id="auth-form">
@@ -228,7 +254,7 @@
     <div id="fallback-container"></div>
     <div id="error-message"></div>
     <div id="debug-panel" style="display: none;"></div>
-    <div class="version-info">Versão: 1.1 - Atualizado em: 03/03/2024</div>
+    <div class="version-info">Versão: 1.2 - Atualizado em: 03/03/2024 - Branch: dev</div>
 
     <!-- Importar Three.js diretamente - versão mais antiga e estável -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
