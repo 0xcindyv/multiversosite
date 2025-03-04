@@ -1769,10 +1769,34 @@ function animate() {
             const collisionResult = checkTerrainCollision(nextPosition);
             
             // Atualiza posição da nave se não houver colisão com o stream
-            const streamBox = new THREE.Box3().setFromObject(streamScreen);
-            const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
-            
-            if (!streamBox.intersectsBox(spaceshipBox)) {
+            try {
+                // Garante que o streamScreen existe e é um objeto válido
+                if (streamScreen && typeof streamScreen === 'object') {
+                    // Cria uma nova Box3 para o streamScreen
+                    const streamBox = new THREE.Box3();
+                    
+                    // Atualiza a matriz mundial do objeto se o método existir
+                    if (streamScreen.updateWorldMatrix && typeof streamScreen.updateWorldMatrix === 'function') {
+                        streamScreen.updateWorldMatrix(true, false);
+                    }
+                    
+                    // Define a caixa de colisão a partir do objeto
+                    streamBox.setFromObject(streamScreen);
+                    
+                    // Cria uma nova Box3 para a nave
+                    const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
+                    
+                    // Verifica a colisão
+                    if (!streamBox.intersectsBox(spaceshipBox)) {
+                        spaceship.position.copy(collisionResult.position);
+                    }
+                } else {
+                    // Se o streamScreen não existir, apenas atualiza a posição da nave
+                    spaceship.position.copy(collisionResult.position);
+                }
+            } catch (error) {
+                console.warn("Erro ao verificar colisão com streamScreen:", error);
+                // Em caso de erro, apenas atualiza a posição da nave
                 spaceship.position.copy(collisionResult.position);
             }
             
